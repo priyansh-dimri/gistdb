@@ -1,0 +1,63 @@
+# ==== Build directories ====
+build/
+build-*/
+out/
+cmake-build-*/
+
+# ==== CMake-generated files ====
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# ==== Compiled objects ====
+*.o
+*.obj
+*.so
+*.so.*
+*.dylib
+*.dll
+*.a
+*.lib
+*.exe
+*.out
+*.app
+
+# ==== Testing ====
+Testing/
+*.gcda
+*.gcno
+*.gcov
+coverage/
+*.profraw
+*.profdata
+
+# ==== ccache ====
+.ccache/
+
+# ==== Editor / IDE ====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.clangd/
+.cache/
+
+# ==== OS files ====
+.DS_Store
+Thumbs.db
+
+# ==== Logs / temp files ====
+*.log
+*.tmp
+/tmp/
+
+# ==== GistDB on-disk data files ====
+*.gistdb
+/test_data/
+/scratch/
