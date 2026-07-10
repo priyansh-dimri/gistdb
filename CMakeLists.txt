@@ -18,6 +18,7 @@ add_library(gistdb_core STATIC
   src/storage/column_footer_entry.cpp
   src/storage/row_group_footer_entry.cpp
   src/storage/footer.cpp
+  src/storage/file_header.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_compile_features(gistdb_core PUBLIC cxx_std_23)
