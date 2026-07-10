@@ -17,6 +17,9 @@ namespace gistdb::storage
         bool IsValid(std::size_t index) const;
         bool IsNull(std::size_t index) const;
 
+        // Grows the bitmap by one row
+        void PushBack(bool is_valid);
+
         std::size_t Size() const;
         std::size_t CountNulls() const;
 

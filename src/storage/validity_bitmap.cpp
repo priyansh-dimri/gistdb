@@ -36,6 +36,17 @@ namespace gistdb::storage
 
     bool ValidityBitmap::IsNull(std::size_t index) const { return !IsValid(index); }
 
+    void ValidityBitmap::PushBack(bool is_valid)
+    {
+        ++num_rows_;
+        std::size_t needed_bytes = (num_rows_ + kBitsPerByte - 1) / kBitsPerByte;
+        if (bytes_.size() < needed_bytes)
+        {
+            bytes_.resize(needed_bytes, std::uint8_t{0x00});
+        }
+        SetValid(num_rows_ - 1, is_valid);
+    }
+
     std::size_t ValidityBitmap::Size() const { return num_rows_; }
 
     std::size_t ValidityBitmap::CountNulls() const

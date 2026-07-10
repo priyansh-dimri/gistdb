@@ -43,6 +43,28 @@ namespace gistdb::storage
             EXPECT_EQ(bitmap.CountNulls(), 1u);
         }
 
+        TEST(ValidityBitmapTest, PushBackGrowsSizeAndPreservesExistingBits)
+        {
+            ValidityBitmap bitmap(0);
+            bitmap.PushBack(true);
+            bitmap.PushBack(false);
+            bitmap.PushBack(true);
+
+            EXPECT_EQ(bitmap.Size(), 3u);
+            EXPECT_TRUE(bitmap.IsValid(0));
+            EXPECT_TRUE(bitmap.IsNull(1));
+            EXPECT_TRUE(bitmap.IsValid(2));
+            EXPECT_EQ(bitmap.CountNulls(), 1u);
+        }
+
+        TEST(ValidityBitmapTest, PushBackGrowsByteSizeOnlyWhenCrossingByteBoundary)
+        {
+            ValidityBitmap bitmap(8); // already 1 full byte
+            EXPECT_EQ(bitmap.ByteSize(), 1u);
+            bitmap.PushBack(true); // 9th bit should needs a 2nd byte
+            EXPECT_EQ(bitmap.ByteSize(), 2u);
+        }
+
         TEST(ValidityBitmapTest, SizeReflectsRowCountNotByteCount)
         {
             EXPECT_EQ(ValidityBitmap(13).Size(), 13u);
