@@ -61,8 +61,7 @@ TEST(VarcharZoneMapTest, SubsequentUpdatesExpandLexicographicRange) {
 
 TEST(VarcharZoneMapTest, PrefixIsTruncatedToZoneMapPrefixLength) {
   VarcharZoneMap zone_map;
-  zone_map.Update(
-      "abcdefghijklmnop"); // longer than the prefix length
+  zone_map.Update("abcdefghijklmnop"); // longer than the prefix length
   EXPECT_EQ(zone_map.MinPrefix().size(), kZoneMapPrefixLength);
   EXPECT_EQ(zone_map.MinPrefix(), "abcdefgh");
 }

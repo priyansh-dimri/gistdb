@@ -3,35 +3,30 @@
 #include <cstddef>
 #include <optional>
 
-namespace gistdb
-{
+namespace gistdb {
 
-    enum class TypeId
-    {
-        kInteger,
-        kFloat,
-        kVarchar,
-    };
+enum class TypeId {
+  kInteger,
+  kFloat,
+  kVarchar,
+};
 
-    // Per-value byte width for fixed-width types; nullopt for VARCHAR, 
-    // which has no fixed per-value size.
-    constexpr std::optional<std::size_t> FixedWidthByteSize(TypeId type)
-    {
-        switch (type)
-        {
-        case TypeId::kInteger:
-            return 4;
-        case TypeId::kFloat:
-            return 4;
-        case TypeId::kVarchar:
-            return std::nullopt;
-        }
-        return std::nullopt;
-    }
+// Per-value byte width for fixed-width types; nullopt for VARCHAR,
+// which has no fixed per-value size.
+constexpr std::optional<std::size_t> FixedWidthByteSize(TypeId type) {
+  switch (type) {
+  case TypeId::kInteger:
+    return 4;
+  case TypeId::kFloat:
+    return 4;
+  case TypeId::kVarchar:
+    return std::nullopt;
+  }
+  return std::nullopt;
+}
 
-    constexpr bool IsFixedWidth(TypeId type)
-    {
-        return FixedWidthByteSize(type).has_value();
-    }
+constexpr bool IsFixedWidth(TypeId type) {
+  return FixedWidthByteSize(type).has_value();
+}
 
 } // namespace gistdb
