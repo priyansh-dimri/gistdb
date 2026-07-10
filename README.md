@@ -1,8 +1,15 @@
+<div align="center">
 # GistDB
 
-GistDB is a single-threaded analytical database engine which stores data column-by-column instead of row-by-row, and processes it in batches of rows at a time instead of one row at a time.
+[![CI](https://github.com/priyansh-dimri/gistdb/actions/workflows/ci.yml/badge.svg)](https://github.com/priyansh-dimri/gistdb/actions/workflows/ci.yml)
+[![Lint](https://github.com/priyansh-dimri/gistdb/actions/workflows/lint.yml/badge.svg)](https://github.com/priyansh-dimri/gistdb/actions/workflows/lint.yml)
+[![codecov](https://codecov.io/gh/priyansh-dimri/gistdb/graph/badge.svg)](https://codecov.io/gh/priyansh-dimri/gistdb)
 
-It is implemented using an on-disk storage format, buffer pool manager, rule based query optimizer, and vectorized execution engine, all implemented from scratch.
+</div>
+
+GistDB is a single-threaded analytical database engine that stores data column-by-column instead of row-by-row, and processes it in batches of rows at a time rather than one row at a time.
+
+It is implemented from scratch in modern C++ with an on-disk storage format, buffer pool manager, rule-based query optimizer, and vectorized execution engine.
 
 ## What it does
 
