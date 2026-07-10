@@ -1,4 +1,5 @@
 <div align="center">
+
 # GistDB
 
 [![CI](https://github.com/priyansh-dimri/gistdb/actions/workflows/ci.yml/badge.svg)](https://github.com/priyansh-dimri/gistdb/actions/workflows/ci.yml)

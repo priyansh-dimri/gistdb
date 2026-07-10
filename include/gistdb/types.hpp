@@ -6,7 +6,7 @@
 
 namespace gistdb {
 
-enum class TypeId: std::uint8_t {
+enum class TypeId : std::uint8_t {
   kInteger,
   kFloat,
   kVarchar,

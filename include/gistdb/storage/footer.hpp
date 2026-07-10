@@ -14,7 +14,8 @@ class Footer {
   void AddRowGroup(RowGroupFooterEntry entry);
 
   [[nodiscard]] std::size_t NumRowGroups() const;
-  [[nodiscard]] const RowGroupFooterEntry& RowGroup(std::size_t index) const;  // pre: index < NumRowGroups()
+  [[nodiscard]] const RowGroupFooterEntry& RowGroup(
+      std::size_t index) const;  // pre: index < NumRowGroups()
 
   // serializes footer into a flat byte buffer
   [[nodiscard]] std::vector<std::uint8_t> Serialize() const;

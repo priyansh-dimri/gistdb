@@ -23,7 +23,8 @@ class RowGroupFooterEntry {
   [[nodiscard]] PageRange ValidityBitmapRegion() const { return validity_bitmap_region_; }
 
   [[nodiscard]] std::size_t NumColumns() const { return columns_.size(); }
-  [[nodiscard]] const ColumnFooterEntry& Column(std::size_t ordinal) const;  // pre: ordinal < NumColumns()
+  [[nodiscard]] const ColumnFooterEntry& Column(
+      std::size_t ordinal) const;  // pre: ordinal < NumColumns()
 
  private:
   std::uint32_t table_id_;
