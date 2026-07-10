@@ -1,4 +1,5 @@
 #include "gistdb/storage/varchar_column.hpp"
+
 #include <gtest/gtest.h>
 
 namespace gistdb::storage {
@@ -7,7 +8,7 @@ namespace {
 TEST(VarcharColumnTest, DefaultConstructionIsEmpty) {
   VarcharColumn column;
   EXPECT_EQ(column.Size(), 0u);
-  EXPECT_EQ(column.NumOffsets(), 1u); // offsets_ always starts with [0]
+  EXPECT_EQ(column.NumOffsets(), 1u);  // offsets_ always starts with [0]
 }
 
 TEST(VarcharColumnTest, AppendStoresRetrievableValue) {
@@ -40,7 +41,7 @@ TEST(VarcharColumnTest, AppendNullMarksInvalidWithZeroLengthSpan) {
   column.AppendNull();
   EXPECT_EQ(column.Size(), 2u);
   EXPECT_TRUE(column.IsNull(1));
-  EXPECT_EQ(column.DataBufferSize(), 1u); // null contributes 0 bytes
+  EXPECT_EQ(column.DataBufferSize(), 1u);  // null contributes 0 bytes
 }
 
 TEST(VarcharColumnTest, OffsetsArrayHasSizePlusOneEntries) {
@@ -58,8 +59,8 @@ TEST(VarcharColumnTest, DataBufferSizeMatchesCumulativeAppendedBytes) {
   column.Append("ab");
   column.AppendNull();
   column.Append("cde");
-  EXPECT_EQ(column.DataBufferSize(), 5u); // "ab" + "cde", null contributes 0
+  EXPECT_EQ(column.DataBufferSize(), 5u);  // "ab" + "cde", null contributes 0
 }
 
-} // namespace
-} // namespace gistdb::storage
+}  // namespace
+}  // namespace gistdb::storage

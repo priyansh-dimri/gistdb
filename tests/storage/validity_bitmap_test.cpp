@@ -1,4 +1,5 @@
 #include "gistdb/storage/validity_bitmap.hpp"
+
 #include <gtest/gtest.h>
 
 namespace gistdb::storage {
@@ -50,9 +51,9 @@ TEST(ValidityBitmapTest, PushBackGrowsSizeAndPreservesExistingBits) {
 }
 
 TEST(ValidityBitmapTest, PushBackGrowsByteSizeOnlyWhenCrossingByteBoundary) {
-  ValidityBitmap bitmap(8); // already 1 full byte
+  ValidityBitmap bitmap(8);  // already 1 full byte
   EXPECT_EQ(bitmap.ByteSize(), 1u);
-  bitmap.PushBack(true); // 9th bit should needs a 2nd byte
+  bitmap.PushBack(true);  // 9th bit should needs a 2nd byte
   EXPECT_EQ(bitmap.ByteSize(), 2u);
 }
 
@@ -61,7 +62,7 @@ TEST(ValidityBitmapTest, SizeReflectsRowCountNotByteCount) {
 }
 
 TEST(ValidityBitmapTest, NonMultipleOfEightDoesNotLeakPaddingBits) {
-  ValidityBitmap bitmap(13); // 2 backing bytes, 3 unused padding bits
+  ValidityBitmap bitmap(13);  // 2 backing bytes, 3 unused padding bits
   EXPECT_EQ(bitmap.ByteSize(), 2u);
   EXPECT_EQ(bitmap.CountNulls(), 0u);
 
@@ -82,5 +83,5 @@ TEST(ValidityBitmapTest, DataPointerIsNonNullAndSizedCorrectly) {
   EXPECT_EQ(bitmap.ByteSize(), 128u);
 }
 
-} // namespace
-} // namespace gistdb::storage
+}  // namespace
+}  // namespace gistdb::storage

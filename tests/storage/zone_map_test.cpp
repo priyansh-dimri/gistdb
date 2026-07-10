@@ -1,7 +1,8 @@
+#include "gistdb/storage/zone_map.hpp"
+
 #include <gtest/gtest.h>
 
 #include "gistdb/constants.hpp"
-#include "gistdb/storage/zone_map.hpp"
 
 namespace gistdb::storage {
 namespace {
@@ -61,7 +62,7 @@ TEST(VarcharZoneMapTest, SubsequentUpdatesExpandLexicographicRange) {
 
 TEST(VarcharZoneMapTest, PrefixIsTruncatedToZoneMapPrefixLength) {
   VarcharZoneMap zone_map;
-  zone_map.Update("abcdefghijklmnop"); // longer than the prefix length
+  zone_map.Update("abcdefghijklmnop");  // longer than the prefix length
   EXPECT_EQ(zone_map.MinPrefix().size(), kZoneMapPrefixLength);
   EXPECT_EQ(zone_map.MinPrefix(), "abcdefgh");
 }
@@ -74,5 +75,5 @@ TEST(VarcharZoneMapTest, ShorterTruePrefixComparesAsSmaller) {
   EXPECT_EQ(zone_map.MaxPrefix(), "apple");
 }
 
-} // namespace
-} // namespace gistdb::storage
+}  // namespace
+}  // namespace gistdb::storage

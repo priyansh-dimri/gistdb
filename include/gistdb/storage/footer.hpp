@@ -8,23 +8,22 @@
 namespace gistdb::storage {
 
 class Footer {
-public:
+ public:
   Footer() = default;
 
   void AddRowGroup(RowGroupFooterEntry entry);
 
-  std::size_t NumRowGroups() const;
-  const RowGroupFooterEntry &
-  RowGroup(std::size_t index) const; // pre: index < NumRowGroups()
+  [[nodiscard]] std::size_t NumRowGroups() const;
+  [[nodiscard]] const RowGroupFooterEntry& RowGroup(std::size_t index) const;  // pre: index < NumRowGroups()
 
   // serializes footer into a flat byte buffer
-  std::vector<std::uint8_t> Serialize() const;
+  [[nodiscard]] std::vector<std::uint8_t> Serialize() const;
 
   // constructs footer from raw bytes
-  static Footer Deserialize(const std::vector<std::uint8_t> &bytes);
+  static Footer Deserialize(const std::vector<std::uint8_t>& bytes);
 
-private:
+ private:
   std::vector<RowGroupFooterEntry> row_groups_;
 };
 
-} // namespace gistdb::storage
+}  // namespace gistdb::storage

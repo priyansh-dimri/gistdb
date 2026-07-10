@@ -1,4 +1,5 @@
 #include "gistdb/constants.hpp"
+
 #include <gtest/gtest.h>
 namespace gistdb {
 namespace {
@@ -18,5 +19,5 @@ TEST(ConstantsTest, FixedWidthColumnChunkTilesPagesEvenly) {
   EXPECT_EQ(chunk_bytes / kPageSizeBytes, 10u);
 }
 
-} // namespace
-} // namespace gistdb
+}  // namespace
+}  // namespace gistdb

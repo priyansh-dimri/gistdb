@@ -12,7 +12,7 @@ ValidityBitmap::ValidityBitmap(std::size_t num_rows, bool default_valid)
 
 void ValidityBitmap::SetValid(std::size_t index, bool is_valid) {
   std::size_t byte_index = index / kBitsPerByte;
-  auto bit_mask = static_cast<std::uint8_t>(1u << (index % kBitsPerByte));
+  auto bit_mask = static_cast<std::uint8_t>(1U << (index % kBitsPerByte));
   if (is_valid) {
     bytes_[byte_index] |= bit_mask;
   } else {
@@ -22,11 +22,13 @@ void ValidityBitmap::SetValid(std::size_t index, bool is_valid) {
 
 bool ValidityBitmap::IsValid(std::size_t index) const {
   std::size_t byte_index = index / kBitsPerByte;
-  auto bit_mask = static_cast<std::uint8_t>(1u << (index % kBitsPerByte));
+  auto bit_mask = static_cast<std::uint8_t>(1U << (index % kBitsPerByte));
   return (bytes_[byte_index] & bit_mask) != 0;
 }
 
-bool ValidityBitmap::IsNull(std::size_t index) const { return !IsValid(index); }
+bool ValidityBitmap::IsNull(std::size_t index) const {
+  return !IsValid(index);
+}
 
 void ValidityBitmap::PushBack(bool is_valid) {
   ++num_rows_;
@@ -37,7 +39,9 @@ void ValidityBitmap::PushBack(bool is_valid) {
   SetValid(num_rows_ - 1, is_valid);
 }
 
-std::size_t ValidityBitmap::Size() const { return num_rows_; }
+std::size_t ValidityBitmap::Size() const {
+  return num_rows_;
+}
 
 std::size_t ValidityBitmap::CountNulls() const {
   std::size_t count = 0;
@@ -47,8 +51,12 @@ std::size_t ValidityBitmap::CountNulls() const {
   return count;
 }
 
-const std::uint8_t *ValidityBitmap::Data() const { return bytes_.data(); }
+const std::uint8_t* ValidityBitmap::Data() const {
+  return bytes_.data();
+}
 
-std::size_t ValidityBitmap::ByteSize() const { return bytes_.size(); }
+std::size_t ValidityBitmap::ByteSize() const {
+  return bytes_.size();
+}
 
-} // namespace gistdb::storage
+}  // namespace gistdb::storage

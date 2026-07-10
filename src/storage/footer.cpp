@@ -1,9 +1,10 @@
 #include "gistdb/storage/footer.hpp"
-#include "gistdb/constants.hpp"
 
 #include <cstring>
 #include <type_traits>
 #include <utility>
+
+#include "gistdb/constants.hpp"
 
 namespace gistdb::storage {
 
@@ -13,37 +14,36 @@ constexpr std::uint8_t kColumnTagInteger = 0;
 constexpr std::uint8_t kColumnTagFloat = 1;
 constexpr std::uint8_t kColumnTagVarchar = 2;
 
-void WriteU8(std::vector<std::uint8_t> &buf, std::uint8_t value) {
+void WriteU8(std::vector<std::uint8_t>& buf, std::uint8_t value) {
   buf.push_back(value);
 }
 
-void WriteU32(std::vector<std::uint8_t> &buf, std::uint32_t value) {
+void WriteU32(std::vector<std::uint8_t>& buf, std::uint32_t value) {
   for (int i = 0; i < 4; ++i) {
     buf.push_back(static_cast<std::uint8_t>((value >> (8 * i)) & 0xFF));
   }
 }
 
-void WriteFloat(std::vector<std::uint8_t> &buf, float value) {
-  std::uint32_t bits;
+void WriteFloat(std::vector<std::uint8_t>& buf, float value) {
+  std::uint32_t bits = 0;
   std::memcpy(&bits, &value, sizeof(bits));
   WriteU32(buf, bits);
 }
 
-void WritePageRange(std::vector<std::uint8_t> &buf, PageRange range) {
+void WritePageRange(std::vector<std::uint8_t>& buf, PageRange range) {
   WriteU32(buf, range.start_page_id);
   WriteU32(buf, range.page_count);
 }
 
-void WriteFixedPrefix(std::vector<std::uint8_t> &buf, std::string_view data) {
+void WriteFixedPrefix(std::vector<std::uint8_t>& buf, std::string_view data) {
   WriteU8(buf, static_cast<std::uint8_t>(data.size()));
   for (std::size_t i = 0; i < kZoneMapPrefixLength; ++i) {
-    buf.push_back(i < data.size() ? static_cast<std::uint8_t>(data[i])
-                                  : std::uint8_t{0});
+    buf.push_back(i < data.size() ? static_cast<std::uint8_t>(data[i]) : std::uint8_t{0});
   }
 }
 
 template <typename T>
-void WriteScalar(std::vector<std::uint8_t> &buf, T value) {
+void WriteScalar(std::vector<std::uint8_t>& buf, T value) {
   if constexpr (std::is_same_v<T, std::int32_t>) {
     WriteU32(buf, static_cast<std::uint32_t>(value));
   } else {
@@ -52,8 +52,8 @@ void WriteScalar(std::vector<std::uint8_t> &buf, T value) {
 }
 
 template <typename T>
-void WriteFixedWidthEntry(std::vector<std::uint8_t> &buf,
-                          const FixedWidthColumnFooterEntry<T> &entry) {
+void WriteFixedWidthEntry(std::vector<std::uint8_t>& buf,
+                          const FixedWidthColumnFooterEntry<T>& entry) {
   WritePageRange(buf, entry.Pages());
   WriteU32(buf, entry.NullCount());
   WriteU8(buf, entry.Zone().HasValues() ? 1 : 0);
@@ -63,8 +63,7 @@ void WriteFixedWidthEntry(std::vector<std::uint8_t> &buf,
   }
 }
 
-void WriteVarcharEntry(std::vector<std::uint8_t> &buf,
-                       const VarcharColumnFooterEntry &entry) {
+void WriteVarcharEntry(std::vector<std::uint8_t>& buf, const VarcharColumnFooterEntry& entry) {
   WritePageRange(buf, entry.OffsetsPages());
   WritePageRange(buf, entry.DataPages());
   WriteU32(buf, entry.NullCount());
@@ -75,18 +74,14 @@ void WriteVarcharEntry(std::vector<std::uint8_t> &buf,
   }
 }
 
-void WriteColumn(std::vector<std::uint8_t> &buf,
-                 const ColumnFooterEntry &column) {
+void WriteColumn(std::vector<std::uint8_t>& buf, const ColumnFooterEntry& column) {
   std::visit(
-      [&buf](const auto &entry) {
+      [&buf](const auto& entry) {
         using EntryType = std::decay_t<decltype(entry)>;
-        if constexpr (std::is_same_v<EntryType, FixedWidthColumnFooterEntry<
-                                                    std::int32_t>>) {
+        if constexpr (std::is_same_v<EntryType, FixedWidthColumnFooterEntry<std::int32_t>>) {
           WriteU8(buf, kColumnTagInteger);
           WriteFixedWidthEntry(buf, entry);
-        } else if constexpr (std::is_same_v<
-                                 EntryType,
-                                 FixedWidthColumnFooterEntry<float>>) {
+        } else if constexpr (std::is_same_v<EntryType, FixedWidthColumnFooterEntry<float>>) {
           WriteU8(buf, kColumnTagFloat);
           WriteFixedWidthEntry(buf, entry);
         } else {
@@ -98,8 +93,8 @@ void WriteColumn(std::vector<std::uint8_t> &buf,
 }
 
 class ByteReader {
-public:
-  explicit ByteReader(const std::vector<std::uint8_t> &bytes) : bytes_(bytes) {}
+ public:
+  explicit ByteReader(const std::vector<std::uint8_t>& bytes) : bytes_(bytes) {}
 
   std::uint8_t ReadU8() { return bytes_[pos_++]; }
 
@@ -113,7 +108,7 @@ public:
 
   float ReadFloat() {
     std::uint32_t bits = ReadU32();
-    float value;
+    float value{};
     std::memcpy(&value, &bits, sizeof(value));
     return value;
   }
@@ -135,12 +130,14 @@ public:
     return result;
   }
 
-private:
-  const std::vector<std::uint8_t> &bytes_;
+ private:
+  const std::vector<std::uint8_t>&
+      bytes_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
   std::size_t pos_ = 0;
 };
 
-template <typename T> T ReadScalar(ByteReader &reader) {
+template <typename T>
+T ReadScalar(ByteReader& reader) {
   if constexpr (std::is_same_v<T, std::int32_t>) {
     return static_cast<std::int32_t>(reader.ReadU32());
   } else {
@@ -149,7 +146,7 @@ template <typename T> T ReadScalar(ByteReader &reader) {
 }
 
 template <typename T>
-FixedWidthColumnFooterEntry<T> ReadFixedWidthEntry(ByteReader &reader) {
+FixedWidthColumnFooterEntry<T> ReadFixedWidthEntry(ByteReader& reader) {
   PageRange pages = reader.ReadPageRange();
   std::uint32_t null_count = reader.ReadU32();
   bool has_values = reader.ReadU8() != 0;
@@ -163,7 +160,7 @@ FixedWidthColumnFooterEntry<T> ReadFixedWidthEntry(ByteReader &reader) {
   return FixedWidthColumnFooterEntry<T>::FromFields(pages, null_count, zone);
 }
 
-VarcharColumnFooterEntry ReadVarcharEntry(ByteReader &reader) {
+VarcharColumnFooterEntry ReadVarcharEntry(ByteReader& reader) {
   PageRange offsets_pages = reader.ReadPageRange();
   PageRange data_pages = reader.ReadPageRange();
   std::uint32_t null_count = reader.ReadU32();
@@ -175,38 +172,39 @@ VarcharColumnFooterEntry ReadVarcharEntry(ByteReader &reader) {
     zone.Update(min_prefix);
     zone.Update(max_prefix);
   }
-  return VarcharColumnFooterEntry::FromFields(offsets_pages, data_pages,
-                                              null_count, zone);
+  return VarcharColumnFooterEntry::FromFields(offsets_pages, data_pages, null_count, zone);
 }
 
-ColumnFooterEntry ReadColumn(ByteReader &reader) {
+ColumnFooterEntry ReadColumn(ByteReader& reader) {
   std::uint8_t tag = reader.ReadU8();
   switch (tag) {
-  case kColumnTagInteger:
-    return ColumnFooterEntry{ReadFixedWidthEntry<std::int32_t>(reader)};
-  case kColumnTagFloat:
-    return ColumnFooterEntry{ReadFixedWidthEntry<float>(reader)};
-  default:
-    return ColumnFooterEntry{ReadVarcharEntry(reader)};
+    case kColumnTagInteger:
+      return ColumnFooterEntry{ReadFixedWidthEntry<std::int32_t>(reader)};
+    case kColumnTagFloat:
+      return ColumnFooterEntry{ReadFixedWidthEntry<float>(reader)};
+    default:
+      return ColumnFooterEntry{ReadVarcharEntry(reader)};
   }
 }
 
-} // namespace
+}  // namespace
 
 void Footer::AddRowGroup(RowGroupFooterEntry entry) {
   row_groups_.push_back(std::move(entry));
 }
 
-std::size_t Footer::NumRowGroups() const { return row_groups_.size(); }
+std::size_t Footer::NumRowGroups() const {
+  return row_groups_.size();
+}
 
-const RowGroupFooterEntry &Footer::RowGroup(std::size_t index) const {
+const RowGroupFooterEntry& Footer::RowGroup(std::size_t index) const {
   return row_groups_[index];
 }
 
 std::vector<std::uint8_t> Footer::Serialize() const {
   std::vector<std::uint8_t> buf;
   WriteU32(buf, static_cast<std::uint32_t>(row_groups_.size()));
-  for (const auto &row_group : row_groups_) {
+  for (const auto& row_group : row_groups_) {
     WriteU32(buf, row_group.TableId());
     WriteU32(buf, row_group.RowCount());
     WritePageRange(buf, row_group.ValidityBitmapRegion());
@@ -218,7 +216,7 @@ std::vector<std::uint8_t> Footer::Serialize() const {
   return buf;
 }
 
-Footer Footer::Deserialize(const std::vector<std::uint8_t> &bytes) {
+Footer Footer::Deserialize(const std::vector<std::uint8_t>& bytes) {
   ByteReader reader(bytes);
   Footer footer;
   std::uint32_t num_row_groups = reader.ReadU32();
@@ -232,10 +230,10 @@ Footer Footer::Deserialize(const std::vector<std::uint8_t> &bytes) {
     for (std::uint32_t c = 0; c < num_columns; ++c) {
       columns.push_back(ReadColumn(reader));
     }
-    footer.AddRowGroup(RowGroupFooterEntry(table_id, row_count, validity_region,
-                                           std::move(columns)));
+    footer.AddRowGroup(
+        RowGroupFooterEntry(table_id, row_count, validity_region, std::move(columns)));
   }
   return footer;
 }
 
-} // namespace gistdb::storage
+}  // namespace gistdb::storage

@@ -3,9 +3,8 @@
 namespace gistdb::storage {
 
 template <typename T>
-FixedWidthColumnFooterEntry<T>
-FixedWidthColumnFooterEntry<T>::Build(const FixedWidthColumn<T> &column,
-                                      PageRange pages) {
+FixedWidthColumnFooterEntry<T> FixedWidthColumnFooterEntry<T>::Build(
+    const FixedWidthColumn<T>& column, PageRange pages) {
   FixedWidthColumnFooterEntry<T> entry;
   entry.pages_ = pages;
   for (std::size_t i = 0; i < column.Size(); ++i) {
@@ -19,8 +18,9 @@ FixedWidthColumnFooterEntry<T>::Build(const FixedWidthColumn<T> &column,
 }
 
 template <typename T>
-FixedWidthColumnFooterEntry<T> FixedWidthColumnFooterEntry<T>::FromFields(
-    PageRange pages, std::uint32_t null_count, ZoneMap<T> zone) {
+FixedWidthColumnFooterEntry<T> FixedWidthColumnFooterEntry<T>::FromFields(PageRange pages,
+                                                                          std::uint32_t null_count,
+                                                                          ZoneMap<T> zone) {
   FixedWidthColumnFooterEntry<T> entry;
   entry.pages_ = pages;
   entry.null_count_ = null_count;
@@ -31,9 +31,9 @@ FixedWidthColumnFooterEntry<T> FixedWidthColumnFooterEntry<T>::FromFields(
 template class FixedWidthColumnFooterEntry<std::int32_t>;
 template class FixedWidthColumnFooterEntry<float>;
 
-VarcharColumnFooterEntry
-VarcharColumnFooterEntry::Build(const VarcharColumn &column,
-                                PageRange offsets_pages, PageRange data_pages) {
+VarcharColumnFooterEntry VarcharColumnFooterEntry::Build(const VarcharColumn& column,
+                                                         PageRange offsets_pages,
+                                                         PageRange data_pages) {
   VarcharColumnFooterEntry entry;
   entry.offsets_pages_ = offsets_pages;
   entry.data_pages_ = data_pages;
@@ -47,15 +47,16 @@ VarcharColumnFooterEntry::Build(const VarcharColumn &column,
   return entry;
 }
 
-VarcharColumnFooterEntry VarcharColumnFooterEntry::FromFields(
-    PageRange offsets_pages, PageRange data_pages, std::uint32_t null_count,
-    VarcharZoneMap zone) {
+VarcharColumnFooterEntry VarcharColumnFooterEntry::FromFields(PageRange offsets_pages,
+                                                              PageRange data_pages,
+                                                              std::uint32_t null_count,
+                                                              VarcharZoneMap zone) {
   VarcharColumnFooterEntry entry;
   entry.offsets_pages_ = offsets_pages;
   entry.data_pages_ = data_pages;
   entry.null_count_ = null_count;
-  entry.zone_map_ = zone;
+  entry.zone_map_ = std::move(zone);
   return entry;
 }
 
-} // namespace gistdb::storage
+}  // namespace gistdb::storage

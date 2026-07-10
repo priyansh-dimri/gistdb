@@ -1,4 +1,5 @@
 #include "gistdb/storage/column_footer_entry.hpp"
+
 #include <gtest/gtest.h>
 
 namespace gistdb::storage {
@@ -10,8 +11,7 @@ TEST(FixedWidthColumnFooterEntryTest, BuildsFromAllValidColumn) {
   column.Append(30);
   column.Append(5);
 
-  auto entry =
-      FixedWidthColumnFooterEntry<std::int32_t>::Build(column, PageRange{7, 3});
+  auto entry = FixedWidthColumnFooterEntry<std::int32_t>::Build(column, PageRange{7, 3});
 
   EXPECT_EQ(entry.Pages(), (PageRange{7, 3}));
   EXPECT_EQ(entry.NullCount(), 0u);
@@ -25,8 +25,7 @@ TEST(FixedWidthColumnFooterEntryTest, NullsAreCountedAndExcludedFromZoneMap) {
   column.AppendNull();
   column.Append(1);
 
-  auto entry =
-      FixedWidthColumnFooterEntry<std::int32_t>::Build(column, PageRange{0, 1});
+  auto entry = FixedWidthColumnFooterEntry<std::int32_t>::Build(column, PageRange{0, 1});
 
   EXPECT_EQ(entry.NullCount(), 1u);
   EXPECT_EQ(entry.Zone().Min(), 1);
@@ -38,8 +37,7 @@ TEST(FixedWidthColumnFooterEntryTest, AllNullColumnProducesVacuousZoneMap) {
   column.AppendNull();
   column.AppendNull();
 
-  auto entry =
-      FixedWidthColumnFooterEntry<std::int32_t>::Build(column, PageRange{0, 1});
+  auto entry = FixedWidthColumnFooterEntry<std::int32_t>::Build(column, PageRange{0, 1});
 
   EXPECT_EQ(entry.NullCount(), 2u);
   EXPECT_FALSE(entry.Zone().HasValues());
@@ -50,8 +48,7 @@ TEST(FixedWidthColumnFooterEntryTest, WorksForFloatToo) {
   column.Append(1.5F);
   column.Append(-2.5F);
 
-  auto entry =
-      FixedWidthColumnFooterEntry<float>::Build(column, PageRange{0, 1});
+  auto entry = FixedWidthColumnFooterEntry<float>::Build(column, PageRange{0, 1});
 
   EXPECT_FLOAT_EQ(entry.Zone().Min(), -2.5F);
   EXPECT_FLOAT_EQ(entry.Zone().Max(), 1.5F);
@@ -62,8 +59,7 @@ TEST(VarcharColumnFooterEntryTest, BuildsFromAllValidColumn) {
   column.Append("banana");
   column.Append("apple");
 
-  auto entry =
-      VarcharColumnFooterEntry::Build(column, PageRange{1, 2}, PageRange{3, 4});
+  auto entry = VarcharColumnFooterEntry::Build(column, PageRange{1, 2}, PageRange{3, 4});
 
   EXPECT_EQ(entry.OffsetsPages(), (PageRange{1, 2}));
   EXPECT_EQ(entry.DataPages(), (PageRange{3, 4}));
@@ -77,8 +73,7 @@ TEST(VarcharColumnFooterEntryTest, NullsAreCountedAndExcludedFromZoneMap) {
   column.Append("z");
   column.AppendNull();
 
-  auto entry =
-      VarcharColumnFooterEntry::Build(column, PageRange{0, 1}, PageRange{0, 1});
+  auto entry = VarcharColumnFooterEntry::Build(column, PageRange{0, 1}, PageRange{0, 1});
 
   EXPECT_EQ(entry.NullCount(), 1u);
   EXPECT_EQ(entry.Zone().MinPrefix(), "z");
@@ -88,12 +83,11 @@ TEST(VarcharColumnFooterEntryTest, AllNullColumnProducesVacuousZoneMap) {
   VarcharColumn column;
   column.AppendNull();
 
-  auto entry =
-      VarcharColumnFooterEntry::Build(column, PageRange{0, 1}, PageRange{0, 1});
+  auto entry = VarcharColumnFooterEntry::Build(column, PageRange{0, 1}, PageRange{0, 1});
 
   EXPECT_EQ(entry.NullCount(), 1u);
   EXPECT_FALSE(entry.Zone().HasValues());
 }
 
-} // namespace
-} // namespace gistdb::storage
+}  // namespace
+}  // namespace gistdb::storage

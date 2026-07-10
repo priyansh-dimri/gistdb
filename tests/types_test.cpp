@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
-
 #include "gistdb/types.hpp"
+
+#include <gtest/gtest.h>
 
 namespace gistdb {
 namespace {
@@ -20,5 +20,5 @@ TEST(TypesTest, IsFixedWidthClassification) {
   EXPECT_FALSE(IsFixedWidth(TypeId::kVarchar));
 }
 
-} // namespace
-} // namespace gistdb
+}  // namespace
+}  // namespace gistdb

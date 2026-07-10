@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
-
 #include "gistdb/storage/fixed_width_column.hpp"
+
+#include <gtest/gtest.h>
 
 namespace gistdb::storage {
 namespace {
@@ -48,7 +48,7 @@ TEST(FixedWidthColumnTest, DataPointerMatchesAppendedValues) {
   column.Append(1);
   column.Append(2);
   column.Append(3);
-  const std::int32_t *data = column.Data();
+  const std::int32_t* data = column.Data();
   EXPECT_EQ(data[0], 1);
   EXPECT_EQ(data[1], 2);
   EXPECT_EQ(data[2], 3);
@@ -62,5 +62,5 @@ TEST(FixedWidthColumnTest, WorksForFloatToo) {
   EXPECT_TRUE(column.IsNull(1));
 }
 
-} // namespace
-} // namespace gistdb::storage
+}  // namespace
+}  // namespace gistdb::storage
