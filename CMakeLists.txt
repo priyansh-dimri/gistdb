@@ -14,6 +14,7 @@ add_library(gistdb_core STATIC
   src/storage/validity_bitmap.cpp
   src/storage/fixed_width_column.cpp
   src/storage/varchar_column.cpp
+  src/storage/zone_map.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_compile_features(gistdb_core PUBLIC cxx_std_23)
