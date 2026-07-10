@@ -9,3 +9,4 @@ function(add_gistdb_test test_name)
 endfunction()
 
 add_gistdb_test(constants_test constants_test.cpp)
+add_gistdb_test(types_test types_test.cpp)
