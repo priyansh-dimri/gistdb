@@ -10,3 +10,4 @@ endfunction()
 
 add_gistdb_test(constants_test constants_test.cpp)
 add_gistdb_test(types_test types_test.cpp)
+add_gistdb_test(validity_bitmap_test storage/validity_bitmap_test.cpp)
