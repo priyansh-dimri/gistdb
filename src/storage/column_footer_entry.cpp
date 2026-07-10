@@ -18,6 +18,16 @@ FixedWidthColumnFooterEntry<T>::Build(const FixedWidthColumn<T> &column,
   return entry;
 }
 
+template <typename T>
+FixedWidthColumnFooterEntry<T> FixedWidthColumnFooterEntry<T>::FromFields(
+    PageRange pages, std::uint32_t null_count, ZoneMap<T> zone) {
+  FixedWidthColumnFooterEntry<T> entry;
+  entry.pages_ = pages;
+  entry.null_count_ = null_count;
+  entry.zone_map_ = zone;
+  return entry;
+}
+
 template class FixedWidthColumnFooterEntry<std::int32_t>;
 template class FixedWidthColumnFooterEntry<float>;
 
@@ -34,6 +44,17 @@ VarcharColumnFooterEntry::Build(const VarcharColumn &column,
       entry.zone_map_.Update(column.GetValue(i));
     }
   }
+  return entry;
+}
+
+VarcharColumnFooterEntry VarcharColumnFooterEntry::FromFields(
+    PageRange offsets_pages, PageRange data_pages, std::uint32_t null_count,
+    VarcharZoneMap zone) {
+  VarcharColumnFooterEntry entry;
+  entry.offsets_pages_ = offsets_pages;
+  entry.data_pages_ = data_pages;
+  entry.null_count_ = null_count;
+  entry.zone_map_ = zone;
   return entry;
 }
 

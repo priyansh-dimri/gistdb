@@ -19,6 +19,11 @@ public:
   static FixedWidthColumnFooterEntry Build(const FixedWidthColumn<T> &column,
                                            PageRange pages);
 
+  // Reconstructs an entry from the already known field values. It is used when
+  // deserializing a footer, where the original column no longer exists.
+  static FixedWidthColumnFooterEntry
+  FromFields(PageRange pages, std::uint32_t null_count, ZoneMap<T> zone);
+
   PageRange Pages() const { return pages_; }
   std::uint32_t NullCount() const { return null_count_; }
   const ZoneMap<T> &Zone() const { return zone_map_; }
@@ -37,6 +42,11 @@ public:
   static VarcharColumnFooterEntry Build(const VarcharColumn &column,
                                         PageRange offsets_pages,
                                         PageRange data_pages);
+
+  static VarcharColumnFooterEntry FromFields(PageRange offsets_pages,
+                                             PageRange data_pages,
+                                             std::uint32_t null_count,
+                                             VarcharZoneMap zone);
 
   PageRange OffsetsPages() const { return offsets_pages_; }
   PageRange DataPages() const { return data_pages_; }
