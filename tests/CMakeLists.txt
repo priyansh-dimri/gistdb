@@ -27,3 +27,4 @@ add_gistdb_test(row_group_footer_entry_test storage/row_group_footer_entry_test.
 add_gistdb_test(footer_test storage/footer_test.cpp)
 add_gistdb_test(file_header_test storage/file_header_test.cpp)
 add_gistdb_test(disk_manager_test storage/disk_manager_test.cpp)
+add_gistdb_test(table_object_test catalog/table_object_test.cpp)

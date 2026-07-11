@@ -1,6 +1,6 @@
 # 0004 - The Disk Manager
 
-**Date:** July 10, 2026
+**Date:** July 11, 2026
 
 ## Two addressing schemes sharing one file
 

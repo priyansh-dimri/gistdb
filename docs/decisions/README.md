@@ -2,6 +2,10 @@
 
 A running record of decisions behind what has been built in GistDB and the rationale behind each.
 
-| #                                                   | Entry                                   | Date          |
-| --------------------------------------------------- | --------------------------------------- | ------------- |
-| [0001](0001-column-storage-and-row-group-footer.md) | Column Storage and the Row Group Footer | July 10, 2026 |
+| #                                                          | Entry                                         | Date          |
+| ---------------------------------------------------------- | --------------------------------------------- | ------------- |
+| [0001](0001-column-storage-and-row-group-footer.md)        | Column Storage and the Row Group Footer       | July 10, 2026 |
+| [0002](0002-scoped-temp-file-test-helper.md)               | A Scoped Temp File Helper for Tests           | July 10, 2026 |
+| [0003](0003-file-header-and-page-allocator-persistence.md) | File Header and Persisting the Page Allocator | July 10, 2026 |
+| [0004](0004-disk-manager.md)                               | The Disk Manager                              | July 11, 2026 |
+| [0005](0005-table-object.md)                               | Table Object                                  | July 11, 2026 |
