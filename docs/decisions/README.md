@@ -11,3 +11,4 @@ A running record of decisions behind what has been built in GistDB and the ratio
 | [0005](0005-table-object.md)                               | Table Object                                  | July 11, 2026 |
 | [0006](0006-schema-section-and-shared-byte-io.md)          | Schema Section and a Shared Byte I/O Module   | July 11, 2026 |
 | [0007](0007-catalog.md)                                    | The Catalog                                   | July 11, 2026 |
+| [0008](0008-data-chunk-and-operator-interface.md)          | DataChunk and the Operator Interface          | July 11, 2026 |
