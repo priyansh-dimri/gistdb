@@ -1,40 +1,31 @@
 #include "gistdb/storage/footer.hpp"
 
-#include <cstring>
+#include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
 #include "gistdb/constants.hpp"
+#include "gistdb/serialization/byte_io.hpp"
 
 namespace gistdb::storage {
 
 namespace {
 
+using gistdb::serialization::ByteReader;
+using gistdb::serialization::WriteU32;
+using gistdb::serialization::WriteU8;
+
 constexpr std::uint8_t kColumnTagInteger = 0;
 constexpr std::uint8_t kColumnTagFloat = 1;
 constexpr std::uint8_t kColumnTagVarchar = 2;
-
-void WriteU8(std::vector<std::uint8_t>& buf, std::uint8_t value) {
-  buf.push_back(value);
-}
-
-void WriteU32(std::vector<std::uint8_t>& buf, std::uint32_t value) {
-  for (int i = 0; i < 4; ++i) {
-    buf.push_back(static_cast<std::uint8_t>((value >> (8 * i)) & 0xFF));
-  }
-}
-
-void WriteFloat(std::vector<std::uint8_t>& buf, float value) {
-  std::uint32_t bits = 0;
-  std::memcpy(&bits, &value, sizeof(bits));
-  WriteU32(buf, bits);
-}
 
 void WritePageRange(std::vector<std::uint8_t>& buf, PageRange range) {
   WriteU32(buf, range.start_page_id);
   WriteU32(buf, range.page_count);
 }
 
+// length byte + fixed, zero-padded kZoneMapPrefixLength-byte buffer.
 void WriteFixedPrefix(std::vector<std::uint8_t>& buf, std::string_view data) {
   WriteU8(buf, static_cast<std::uint8_t>(data.size()));
   for (std::size_t i = 0; i < kZoneMapPrefixLength; ++i) {
@@ -47,7 +38,7 @@ void WriteScalar(std::vector<std::uint8_t>& buf, T value) {
   if constexpr (std::is_same_v<T, std::int32_t>) {
     WriteU32(buf, static_cast<std::uint32_t>(value));
   } else {
-    WriteFloat(buf, value);
+    gistdb::serialization::WriteFloat(buf, value);
   }
 }
 
@@ -92,49 +83,19 @@ void WriteColumn(std::vector<std::uint8_t>& buf, const ColumnFooterEntry& column
       column);
 }
 
-class ByteReader {
- public:
-  explicit ByteReader(const std::vector<std::uint8_t>& bytes) : bytes_(bytes) {}
+PageRange ReadPageRange(ByteReader& reader) {
+  PageRange range;
+  range.start_page_id = reader.ReadU32();
+  range.page_count = reader.ReadU32();
+  return range;
+}
 
-  std::uint8_t ReadU8() { return bytes_[pos_++]; }
-
-  std::uint32_t ReadU32() {
-    std::uint32_t value = 0;
-    for (int i = 0; i < 4; ++i) {
-      value |= static_cast<std::uint32_t>(bytes_[pos_++]) << (8 * i);
-    }
-    return value;
-  }
-
-  float ReadFloat() {
-    std::uint32_t bits = ReadU32();
-    float value{};
-    std::memcpy(&value, &bits, sizeof(value));
-    return value;
-  }
-
-  PageRange ReadPageRange() {
-    PageRange range;
-    range.start_page_id = ReadU32();
-    range.page_count = ReadU32();
-    return range;
-  }
-
-  std::string ReadFixedPrefix() {
-    std::uint8_t length = ReadU8();
-    std::string result(kZoneMapPrefixLength, '\0');
-    for (std::size_t i = 0; i < kZoneMapPrefixLength; ++i) {
-      result[i] = static_cast<char>(ReadU8());
-    }
-    result.resize(length);
-    return result;
-  }
-
- private:
-  const std::vector<std::uint8_t>&
-      bytes_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
-  std::size_t pos_ = 0;
-};
+std::string ReadFixedPrefixValue(ByteReader& reader) {
+  std::uint8_t length = reader.ReadU8();
+  std::string value = reader.ReadFixedBytes(kZoneMapPrefixLength);
+  value.resize(length);
+  return value;
+}
 
 template <typename T>
 T ReadScalar(ByteReader& reader) {
@@ -147,7 +108,7 @@ T ReadScalar(ByteReader& reader) {
 
 template <typename T>
 FixedWidthColumnFooterEntry<T> ReadFixedWidthEntry(ByteReader& reader) {
-  PageRange pages = reader.ReadPageRange();
+  PageRange pages = ReadPageRange(reader);
   std::uint32_t null_count = reader.ReadU32();
   bool has_values = reader.ReadU8() != 0;
   ZoneMap<T> zone;
@@ -161,14 +122,14 @@ FixedWidthColumnFooterEntry<T> ReadFixedWidthEntry(ByteReader& reader) {
 }
 
 VarcharColumnFooterEntry ReadVarcharEntry(ByteReader& reader) {
-  PageRange offsets_pages = reader.ReadPageRange();
-  PageRange data_pages = reader.ReadPageRange();
+  PageRange offsets_pages = ReadPageRange(reader);
+  PageRange data_pages = ReadPageRange(reader);
   std::uint32_t null_count = reader.ReadU32();
   bool has_values = reader.ReadU8() != 0;
   VarcharZoneMap zone;
   if (has_values) {
-    std::string min_prefix = reader.ReadFixedPrefix();
-    std::string max_prefix = reader.ReadFixedPrefix();
+    std::string min_prefix = ReadFixedPrefixValue(reader);
+    std::string max_prefix = ReadFixedPrefixValue(reader);
     zone.Update(min_prefix);
     zone.Update(max_prefix);
   }
@@ -223,7 +184,7 @@ Footer Footer::Deserialize(const std::vector<std::uint8_t>& bytes) {
   for (std::uint32_t rg = 0; rg < num_row_groups; ++rg) {
     std::uint32_t table_id = reader.ReadU32();
     std::uint32_t row_count = reader.ReadU32();
-    PageRange validity_region = reader.ReadPageRange();
+    PageRange validity_region = ReadPageRange(reader);
     std::uint32_t num_columns = reader.ReadU32();
     std::vector<ColumnFooterEntry> columns;
     columns.reserve(num_columns);

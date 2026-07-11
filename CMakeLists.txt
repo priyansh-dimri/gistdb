@@ -21,6 +21,7 @@ add_library(gistdb_core STATIC
   src/storage/file_header.cpp
   src/storage/disk_manager.cpp
   src/catalog/table_object.cpp
+  src/serialization/byte_io.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_compile_features(gistdb_core PUBLIC cxx_std_23)
