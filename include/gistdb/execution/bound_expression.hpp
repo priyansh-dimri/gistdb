@@ -37,7 +37,7 @@ enum class UnaryOperator : std::uint8_t {
   kNot,
 };
 
-struct BoundExpression; 
+struct BoundExpression;
 
 struct BoundColumnRef {
   std::uint32_t table_id;
