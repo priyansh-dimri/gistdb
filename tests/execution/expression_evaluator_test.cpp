@@ -152,7 +152,7 @@ TEST(ExpressionEvaluatorTest, ComparisonPropagatesNullFromEitherOperand) {
   EvaluationResult result = ExpressionEvaluator::Evaluate(*expr, chunk);
 
   const auto& bool_result = std::get<BooleanResult>(result);
-  EXPECT_FALSE(bool_result.validity.IsValid(0)); 
+  EXPECT_FALSE(bool_result.validity.IsValid(0));
   EXPECT_TRUE(bool_result.validity.IsValid(1));
 }
 
@@ -213,7 +213,7 @@ TEST(ExpressionEvaluatorTest, NotNegatesValueAndPreservesValidity) {
   const auto& bool_result = std::get<BooleanResult>(result);
   EXPECT_FALSE(bool_result.values.IsValid(0));  // NOT(7 > 5) = NOT(true) = false
   EXPECT_TRUE(bool_result.validity.IsValid(0));
-  EXPECT_FALSE(bool_result.validity.IsValid(1)); 
+  EXPECT_FALSE(bool_result.validity.IsValid(1));
 }
 
 TEST(ExpressionEvaluatorTest, NestedTreeEvaluatesEndToEnd) {

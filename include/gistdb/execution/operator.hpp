@@ -16,7 +16,7 @@ class Operator {
   Operator(Operator&&) = delete;
   Operator& operator=(Operator&&) = delete;
 
-  virtual std::optional<DataChunk> GetNext() = 0;
+  [[nodiscard]] virtual std::optional<DataChunk> GetNext() = 0;
 };
 
 }  // namespace gistdb::execution
