@@ -69,7 +69,7 @@ TEST(FilterOperatorTest, PreExistingDeselectionIsPreserved) {
 }
 
 TEST(FilterOperatorTest, PropagatesEndOfStreamFromChild) {
-  auto child = std::make_unique<MockOperator>(std::vector<DataChunk>{});  
+  auto child = std::make_unique<MockOperator>(std::vector<DataChunk>{});
   auto predicate = MakeBooleanOp(BinaryOperator::kGreaterThan, MakeIntConst(1), MakeIntConst(0));
   FilterOperator filter(std::move(child), std::move(predicate));
 
@@ -104,7 +104,7 @@ TEST(FilterOperatorTest, ProcessesMultipleChunksIndependently) {
   ASSERT_TRUE(second.has_value());
   EXPECT_FALSE(second->IsRowSelected(0));  // 1 > 5 is false
 
-  EXPECT_FALSE(filter.GetNext().has_value());  
+  EXPECT_FALSE(filter.GetNext().has_value());
 }
 
 TEST(FilterOperatorTest, RowCountIsUnchangedEvenWhenAllRowsRejected) {
@@ -125,8 +125,8 @@ TEST(FilterOperatorTest, RowCountIsUnchangedEvenWhenAllRowsRejected) {
   FilterOperator filter(std::move(child), std::move(predicate));
 
   std::optional<DataChunk> result = filter.GetNext();
-  ASSERT_TRUE(result.has_value());    
-  EXPECT_EQ(result->RowCount(), 3U);  
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->RowCount(), 3U);
   EXPECT_EQ(result->CountSelectedRows(), 0U);
 }
 
@@ -148,7 +148,7 @@ TEST(FilterOperatorTest, NullPredicateResultExcludesRow) {
 
   std::optional<DataChunk> result = filter.GetNext();
   ASSERT_TRUE(result.has_value());
-  EXPECT_FALSE(result->IsRowSelected(0)); 
+  EXPECT_FALSE(result->IsRowSelected(0));
   EXPECT_TRUE(result->IsRowSelected(1));
 }
 
