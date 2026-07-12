@@ -27,6 +27,7 @@ add_library(gistdb_core STATIC
   src/execution/data_chunk.cpp
   src/execution/bound_expression.cpp
   src/execution/expression_evaluator.cpp
+  src/execution/filter_operator.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_compile_features(gistdb_core PUBLIC cxx_std_23)

@@ -1,6 +1,6 @@
 # 0010 - The Expression Evaluator
 
-**Date:** July 11, 2026
+**Date:** July 12, 2026
 
 ## Computing every row first, masking nulls after
 
