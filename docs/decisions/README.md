@@ -15,3 +15,4 @@ A running record of decisions behind what has been built in GistDB and the ratio
 | [0009](0009-bound-expression-types.md)                     | Bound Expression Types                        | July 11, 2026 |
 | [0010](0010-expression-evaluator.md)                       | The Expression Evaluator                      | July 12, 2026 |
 | [0011](0011-filter-operator.md)                            | The Filter Operator                           | July 12, 2026 |
+| [0012](0012-aggregate-accumulators.md)                     | Aggregate Accumulators                        | July 12, 2026 |

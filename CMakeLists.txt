@@ -28,6 +28,7 @@ add_library(gistdb_core STATIC
   src/execution/bound_expression.cpp
   src/execution/expression_evaluator.cpp
   src/execution/filter_operator.cpp
+  src/execution/aggregate_accumulator.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_compile_features(gistdb_core PUBLIC cxx_std_23)
