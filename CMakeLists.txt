@@ -31,13 +31,25 @@ add_library(gistdb_core STATIC
   src/execution/aggregate_accumulator.cpp
   src/execution/hash_join_operator.cpp
   src/binder/ast.cpp
+  src/binder/parser.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(gistdb_core PRIVATE
+    ${CMAKE_SOURCE_DIR}/third_party/libpg_query
+    ${CMAKE_SOURCE_DIR}/third_party/libpg_query/protobuf
+    ${CMAKE_SOURCE_DIR}/third_party/libpg_query/vendor
+)
 target_compile_features(gistdb_core PUBLIC cxx_std_23)
 target_compile_options(gistdb_core PUBLIC -Wall -Wextra -Wpedantic)
 target_include_directories(gistdb_core INTERFACE ${CMAKE_SOURCE_DIR}/include)
 target_compile_features(gistdb_core INTERFACE cxx_std_23)
 target_compile_options(gistdb_core INTERFACE -Wall -Wextra -Wpedantic)
+
+add_library(pg_query STATIC IMPORTED)
+set_target_properties(pg_query PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/third_party/libpg_query/libpg_query.a
+)
+target_link_libraries(gistdb_core PUBLIC pg_query)
 
 enable_testing()
 add_subdirectory(tests)
