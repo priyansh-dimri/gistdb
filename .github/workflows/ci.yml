@@ -13,7 +13,9 @@ jobs:
             - uses: actions/checkout@v4
               with:
                   submodules: recursive
-
+            - name: Build libpg_query
+              run: |
+                  make -C third_party/libpg_query
             - name: Install Clang 18
               run: |
                   wget https://apt.llvm.org/llvm.sh
