@@ -37,3 +37,4 @@ add_gistdb_test(expression_evaluator_test execution/expression_evaluator_test.cp
 add_gistdb_test(filter_operator_test execution/filter_operator_test.cpp)
 add_gistdb_test(aggregate_accumulator_test execution/aggregate_accumulator_test.cpp)
 add_gistdb_test(hash_join_operator_test execution/hash_join_operator_test.cpp) 
+add_gistdb_test(ast_test binder/ast_test.cpp)
