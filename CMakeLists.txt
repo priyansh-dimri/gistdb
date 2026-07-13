@@ -32,6 +32,8 @@ add_library(gistdb_core STATIC
   src/execution/hash_join_operator.cpp
   src/binder/ast.cpp
   src/binder/parser.cpp
+  src/binder/type_coercion.cpp
+  src/binder/logical_plan.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(gistdb_core PRIVATE

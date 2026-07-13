@@ -39,3 +39,5 @@ add_gistdb_test(aggregate_accumulator_test execution/aggregate_accumulator_test.
 add_gistdb_test(hash_join_operator_test execution/hash_join_operator_test.cpp) 
 add_gistdb_test(ast_test binder/ast_test.cpp)
 add_gistdb_test(parser_test binder/parser_test.cpp)
+add_gistdb_test(type_coercion_test binder/type_coercion_test.cpp)
+add_gistdb_test(logical_plan_test binder/logical_plan_test.cpp)
