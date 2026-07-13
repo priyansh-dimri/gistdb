@@ -6,17 +6,10 @@
 
 namespace gistdb::execution {
 
-class Operator {
+class Operator {  // NOLINT
  public:
-  Operator() = default;
   virtual ~Operator() = default;
-
-  Operator(const Operator&) = delete;
-  Operator& operator=(const Operator&) = delete;
-  Operator(Operator&&) = delete;
-  Operator& operator=(Operator&&) = delete;
 
   [[nodiscard]] virtual std::optional<DataChunk> GetNext() = 0;
 };
-
 }  // namespace gistdb::execution

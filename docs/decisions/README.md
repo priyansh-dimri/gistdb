@@ -16,3 +16,4 @@ A running record of decisions behind what has been built in GistDB and the ratio
 | [0010](0010-expression-evaluator.md)                       | The Expression Evaluator                      | July 12, 2026 |
 | [0011](0011-filter-operator.md)                            | The Filter Operator                           | July 12, 2026 |
 | [0012](0012-aggregate-accumulators.md)                     | Aggregate Accumulators                        | July 12, 2026 |
+| [0013](0013-hash-join-operator.md)                         | The Hash Join Operator                        | July 13, 2026 |
