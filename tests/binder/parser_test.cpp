@@ -146,5 +146,40 @@ TEST(ParserTest, QualifiedColumnRefStillWorksAfterGuard) {
   EXPECT_EQ(col_ref.column_name, "id");
 }
 
+TEST(ParserTest, PlainSelectHasNoRejectedClausesSet) {
+  ParsedStatement result = Parser::ParseSingleStatement("SELECT id FROM users");
+  auto& select = *std::get<std::unique_ptr<SelectNode>>(result);
+  EXPECT_FALSE(select.has_distinct);
+  EXPECT_FALSE(select.has_order_by);
+  EXPECT_FALSE(select.has_limit);
+  EXPECT_FALSE(select.has_with_clause);
+  EXPECT_FALSE(select.has_set_operation);
+}
+
+TEST(ParserTest, DetectsDistinctClause) {
+  ParsedStatement result = Parser::ParseSingleStatement("SELECT DISTINCT id FROM users");
+  auto& select = *std::get<std::unique_ptr<SelectNode>>(result);
+  EXPECT_TRUE(select.has_distinct);
+}
+
+TEST(ParserTest, DetectsOrderByClause) {
+  ParsedStatement result = Parser::ParseSingleStatement("SELECT id FROM users ORDER BY id");
+  auto& select = *std::get<std::unique_ptr<SelectNode>>(result);
+  EXPECT_TRUE(select.has_order_by);
+}
+
+TEST(ParserTest, DetectsLimitClause) {
+  ParsedStatement result = Parser::ParseSingleStatement("SELECT id FROM users LIMIT 5");
+  auto& select = *std::get<std::unique_ptr<SelectNode>>(result);
+  EXPECT_TRUE(select.has_limit);
+}
+
+TEST(ParserTest, DetectsSetOperation) {
+  ParsedStatement result =
+      Parser::ParseSingleStatement("SELECT id FROM users UNION SELECT id FROM orders");
+  auto& select = *std::get<std::unique_ptr<SelectNode>>(result);
+  EXPECT_TRUE(select.has_set_operation);
+}
+
 }  // namespace
 }  // namespace gistdb::binder

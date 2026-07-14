@@ -26,10 +26,13 @@ std::vector<OutputColumn> OutputSchema(const LogicalPlanNode& node) {
       node.node);
 }
 
-std::unique_ptr<LogicalPlanNode> MakeLogicalScan(std::uint32_t table_id,
+std::unique_ptr<LogicalPlanNode> MakeLogicalScan(std::uint32_t binding_id,
+                                                 std::uint32_t physical_table_id,
                                                  std::vector<OutputColumn> output_columns) {
   auto plan = std::make_unique<LogicalPlanNode>();
-  plan->node = LogicalScan{.table_id = table_id, .output_columns = std::move(output_columns)};
+  plan->node = LogicalScan{.binding_id = binding_id,
+                           .physical_table_id = physical_table_id,
+                           .output_columns = std::move(output_columns)};
   return plan;
 }
 

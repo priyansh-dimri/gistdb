@@ -185,7 +185,9 @@ std::unique_ptr<RawExpression> ConvertExpr(const PgQuery__Node& node) {
 
 [[nodiscard]] std::unique_ptr<TableRefNode> ConvertJoinExpr(const PgQuery__JoinExpr& join) {
   if (join.jointype != PG_QUERY__JOIN_TYPE__JOIN_INNER) {
-    throw ParseException("Only INNER JOIN is supported (Binder Checkpoint, Decision B.11)");
+    throw ParseException(
+        "Only INNER JOIN is supported -- no locked decision addresses outer-join NULL-padding "
+        "semantics, and Hash Join's design has no mechanism for it");
   }
   auto left = ConvertFromItem(*join.larg);
   auto right = ConvertFromItem(*join.rarg);
@@ -240,6 +242,12 @@ std::unique_ptr<TableRefNode> ConvertFromItem(const PgQuery__Node& node) {
   if (stmt.having_clause != nullptr) {
     select->having_clause = ConvertExpr(*stmt.having_clause);
   }
+  select->has_distinct = stmt.n_distinct_clause > 0;
+  select->has_order_by = stmt.n_sort_clause > 0;
+  select->has_limit = stmt.limit_count != nullptr || stmt.limit_offset != nullptr;
+  select->has_with_clause = stmt.with_clause != nullptr;
+  select->has_set_operation = stmt.op != PG_QUERY__SET_OPERATION__SETOP_NONE;
+
   return select;
 }
 

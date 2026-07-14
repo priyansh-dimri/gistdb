@@ -76,6 +76,11 @@ struct SelectNode {
   std::unique_ptr<RawExpression> where_clause;  // null if absent
   std::vector<std::unique_ptr<RawExpression>> group_by;
   std::unique_ptr<RawExpression> having_clause;  // null if absent
+  bool has_distinct = false;
+  bool has_order_by = false;
+  bool has_limit = false;
+  bool has_with_clause = false;
+  bool has_set_operation = false;
 };
 
 struct InsertNode {

@@ -20,7 +20,8 @@ struct OutputColumn {
 };
 
 struct LogicalScan {
-  std::uint32_t table_id;
+  std::uint32_t binding_id;
+  std::uint32_t physical_table_id;
   std::vector<OutputColumn> output_columns;
 };
 
@@ -70,7 +71,8 @@ struct LogicalPlanNode {
 [[nodiscard]] std::vector<OutputColumn> OutputSchema(const LogicalPlanNode& node);
 
 [[nodiscard]] std::unique_ptr<LogicalPlanNode> MakeLogicalScan(
-    std::uint32_t table_id, std::vector<OutputColumn> output_columns);
+    std::uint32_t binding_id, std::uint32_t physical_table_id,
+    std::vector<OutputColumn> output_columns);
 [[nodiscard]] std::unique_ptr<LogicalPlanNode> MakeLogicalFilter(
     std::unique_ptr<LogicalPlanNode> input,
     std::unique_ptr<gistdb::execution::BoundExpression> predicate);

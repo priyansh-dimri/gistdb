@@ -19,18 +19,32 @@ using gistdb::execution::MakeIntConst;
 TEST(LogicalPlanTest, ScanReturnsItsOwnOutputColumns) {
   std::vector<OutputColumn> columns = {{"id", ExpressionType::kInteger},
                                        {"name", ExpressionType::kVarchar}};
-  auto scan = MakeLogicalScan(7, columns);
+  auto scan = MakeLogicalScan(/*binding_id=*/0, /*physical_table_id=*/7, columns);
 
-  EXPECT_EQ(std::get<LogicalScan>(scan->node).table_id, 7U);
+  const auto& stored = std::get<LogicalScan>(scan->node);
+  EXPECT_EQ(stored.binding_id, 0U);
+  EXPECT_EQ(stored.physical_table_id, 7U);
+
   std::vector<OutputColumn> schema = OutputSchema(*scan);
   ASSERT_EQ(schema.size(), 2U);
   EXPECT_EQ(schema[0].display_name, "id");
   EXPECT_EQ(schema[1].display_name, "name");
 }
 
+TEST(LogicalPlanTest, BindingIdAndPhysicalTableIdCanDiffer) {
+  std::vector<OutputColumn> columns = {{"id", ExpressionType::kInteger}};
+  auto scan_one = MakeLogicalScan(/*binding_id=*/0, /*physical_table_id=*/5, columns);
+  auto scan_two = MakeLogicalScan(/*binding_id=*/1, /*physical_table_id=*/5, columns);
+
+  EXPECT_NE(std::get<LogicalScan>(scan_one->node).binding_id,
+            std::get<LogicalScan>(scan_two->node).binding_id);
+  EXPECT_EQ(std::get<LogicalScan>(scan_one->node).physical_table_id,
+            std::get<LogicalScan>(scan_two->node).physical_table_id);
+}
+
 TEST(LogicalPlanTest, FilterHasNoOwnSchemaAndRecursesIntoInput) {
   std::vector<OutputColumn> columns = {{"id", ExpressionType::kInteger}};
-  auto scan = MakeLogicalScan(1, columns);
+  auto scan = MakeLogicalScan(0, 1, columns);
   auto filter = MakeLogicalFilter(std::move(scan), MakeIntConst(1));
 
   std::vector<OutputColumn> schema = OutputSchema(*filter);
@@ -39,8 +53,8 @@ TEST(LogicalPlanTest, FilterHasNoOwnSchemaAndRecursesIntoInput) {
 }
 
 TEST(LogicalPlanTest, JoinConcatenatesLeftThenRightSchema) {
-  auto left = MakeLogicalScan(1, {{"id", ExpressionType::kInteger}});
-  auto right = MakeLogicalScan(2, {{"user_id", ExpressionType::kInteger}});
+  auto left = MakeLogicalScan(1, 101, {{"id", ExpressionType::kInteger}});
+  auto right = MakeLogicalScan(2, 102, {{"user_id", ExpressionType::kInteger}});
 
   std::vector<std::pair<BoundColumnRef, BoundColumnRef>> equi_conditions;
   equi_conditions.emplace_back(
@@ -56,8 +70,8 @@ TEST(LogicalPlanTest, JoinConcatenatesLeftThenRightSchema) {
 }
 
 TEST(LogicalPlanTest, JoinStoresEquiConditionsAsColumnRefPairs) {
-  auto left = MakeLogicalScan(1, {{"id", ExpressionType::kInteger}});
-  auto right = MakeLogicalScan(2, {{"user_id", ExpressionType::kInteger}});
+  auto left = MakeLogicalScan(1, 101, {{"id", ExpressionType::kInteger}});
+  auto right = MakeLogicalScan(2, 102, {{"user_id", ExpressionType::kInteger}});
 
   std::vector<std::pair<BoundColumnRef, BoundColumnRef>> equi_conditions;
   equi_conditions.emplace_back(
@@ -74,7 +88,7 @@ TEST(LogicalPlanTest, JoinStoresEquiConditionsAsColumnRefPairs) {
 
 TEST(LogicalPlanTest, AggregateReturnsItsOwnOutputColumnsNotInputs) {
   auto scan = MakeLogicalScan(
-      1, {{"category", ExpressionType::kVarchar}, {"price", ExpressionType::kInteger}});
+      1, 50, {{"category", ExpressionType::kVarchar}, {"price", ExpressionType::kInteger}});
 
   std::vector<BoundColumnRef> group_by = {
       BoundColumnRef{.table_id = 1, .ordinal = 0, .type = gistdb::TypeId::kVarchar}};
@@ -107,7 +121,7 @@ TEST(LogicalPlanTest, SumAggregateCallCarriesItsArgumentColumn) {
 }
 
 TEST(LogicalPlanTest, ProjectionReturnsItsOwnOutputColumns) {
-  auto scan = MakeLogicalScan(1, {{"price", ExpressionType::kInteger}});
+  auto scan = MakeLogicalScan(0, 1, {{"price", ExpressionType::kInteger}});
 
   std::vector<std::unique_ptr<gistdb::execution::BoundExpression>> select_expressions;
   select_expressions.push_back(MakeIntConst(1));
