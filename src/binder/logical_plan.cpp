@@ -1,6 +1,7 @@
 #include "gistdb/binder/logical_plan.hpp"
 
 #include <iterator>
+#include <numeric>
 #include <type_traits>
 #include <utility>
 
@@ -52,9 +53,12 @@ std::unique_ptr<LogicalPlanNode> MakeLogicalScan(std::uint32_t binding_id,
                                                  std::uint32_t physical_table_id,
                                                  std::vector<OutputColumn> output_columns) {
   auto plan = std::make_unique<LogicalPlanNode>();
+  std::vector<std::uint32_t> all_ordinals(output_columns.size());
+  std::iota(all_ordinals.begin(), all_ordinals.end(), 0U);  // NOLINT
   plan->node = LogicalScan{.binding_id = binding_id,
                            .physical_table_id = physical_table_id,
-                           .output_columns = std::move(output_columns)};
+                           .output_columns = std::move(output_columns),
+                           .required_ordinals = std::move(all_ordinals)};
   return plan;
 }
 

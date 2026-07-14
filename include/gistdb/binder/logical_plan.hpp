@@ -23,6 +23,7 @@ struct LogicalScan {
   std::uint32_t binding_id;
   std::uint32_t physical_table_id;
   std::vector<OutputColumn> output_columns;
+  std::vector<std::uint32_t> required_ordinals;
 };
 
 struct LogicalFilter {

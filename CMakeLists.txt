@@ -38,6 +38,8 @@ add_library(gistdb_core STATIC
   src/binder/binder.cpp
   src/optimizer/predicate_utils.cpp
   src/optimizer/predicate_pushdown.cpp
+  src/optimizer/column_pruning.cpp
+  src/optimizer/optimizer.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(gistdb_core PRIVATE
