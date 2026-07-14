@@ -69,6 +69,7 @@ struct LogicalPlanNode {
 };
 
 [[nodiscard]] std::vector<OutputColumn> OutputSchema(const LogicalPlanNode& node);
+[[nodiscard]] std::vector<std::uint32_t> CollectBindingIds(const LogicalPlanNode& node);
 
 [[nodiscard]] std::unique_ptr<LogicalPlanNode> MakeLogicalScan(
     std::uint32_t binding_id, std::uint32_t physical_table_id,

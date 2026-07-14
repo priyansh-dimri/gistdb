@@ -135,5 +135,74 @@ TEST(LogicalPlanTest, ProjectionReturnsItsOwnOutputColumns) {
   EXPECT_EQ(schema[0].display_name, "one");
 }
 
+TEST(LogicalPlanTest, CollectBindingIdsReturnsScansOwnId) {
+  auto scan = MakeLogicalScan(3, 100, {{"id", ExpressionType::kInteger}});
+  std::vector<std::uint32_t> ids = CollectBindingIds(*scan);
+  ASSERT_EQ(ids.size(), 1U);
+  EXPECT_EQ(ids[0], 3U);
+}
+
+TEST(LogicalPlanTest, CollectBindingIdsRecursesThroughFilter) {
+  auto scan = MakeLogicalScan(2, 100, {{"id", ExpressionType::kInteger}});
+  auto filter = MakeLogicalFilter(std::move(scan), MakeIntConst(1));
+  std::vector<std::uint32_t> ids = CollectBindingIds(*filter);
+  ASSERT_EQ(ids.size(), 1U);
+  EXPECT_EQ(ids[0], 2U);
+}
+
+TEST(LogicalPlanTest, CollectBindingIdsConcatenatesLeftThenRightAcrossJoin) {
+  auto left = MakeLogicalScan(0, 100, {{"id", ExpressionType::kInteger}});
+  auto right = MakeLogicalScan(1, 200, {{"user_id", ExpressionType::kInteger}});
+  std::vector<std::pair<BoundColumnRef, BoundColumnRef>> equi_conditions;
+  equi_conditions.emplace_back(
+      BoundColumnRef{.table_id = 0, .ordinal = 0, .type = gistdb::TypeId::kInteger},
+      BoundColumnRef{.table_id = 1, .ordinal = 0, .type = gistdb::TypeId::kInteger});
+  auto join = MakeLogicalJoin(std::move(left), std::move(right), std::move(equi_conditions));
+
+  std::vector<std::uint32_t> ids = CollectBindingIds(*join);
+  ASSERT_EQ(ids.size(), 2U);
+  EXPECT_EQ(ids[0], 0U);
+  EXPECT_EQ(ids[1], 1U);
+}
+
+TEST(LogicalPlanTest, CollectBindingIdsRecursesThroughAggregate) {
+  auto scan = MakeLogicalScan(4, 100, {{"category", ExpressionType::kVarchar}});
+  std::vector<BoundColumnRef> group_by = {
+      BoundColumnRef{.table_id = 4, .ordinal = 0, .type = gistdb::TypeId::kVarchar}};
+  auto aggregate = MakeLogicalAggregate(std::move(scan), group_by, {}, {});
+
+  std::vector<std::uint32_t> ids = CollectBindingIds(*aggregate);
+  ASSERT_EQ(ids.size(), 1U);
+  EXPECT_EQ(ids[0], 4U);
+}
+
+TEST(LogicalPlanTest, CollectBindingIdsRecursesThroughProjection) {
+  auto scan = MakeLogicalScan(5, 100, {{"price", ExpressionType::kInteger}});
+  std::vector<std::unique_ptr<gistdb::execution::BoundExpression>> select_expressions;
+  select_expressions.push_back(MakeIntConst(1));
+  auto projection = MakeLogicalProjection(std::move(scan), std::move(select_expressions),
+                                          {{"one", ExpressionType::kInteger}});
+
+  std::vector<std::uint32_t> ids = CollectBindingIds(*projection);
+  ASSERT_EQ(ids.size(), 1U);
+  EXPECT_EQ(ids[0], 5U);
+}
+
+TEST(LogicalPlanTest, CollectBindingIdsHandlesJoinWithNonScanChild) {
+  auto inner_scan = MakeLogicalScan(0, 100, {{"id", ExpressionType::kInteger}});
+  auto projection = MakeLogicalProjection(std::move(inner_scan), {}, {});
+  auto right = MakeLogicalScan(1, 200, {{"user_id", ExpressionType::kInteger}});
+
+  std::vector<std::pair<BoundColumnRef, BoundColumnRef>> equi_conditions;
+  equi_conditions.emplace_back(
+      BoundColumnRef{.table_id = 0, .ordinal = 0, .type = gistdb::TypeId::kInteger},
+      BoundColumnRef{.table_id = 1, .ordinal = 0, .type = gistdb::TypeId::kInteger});
+  auto join = MakeLogicalJoin(std::move(projection), std::move(right), std::move(equi_conditions));
+
+  std::vector<std::uint32_t> ids = CollectBindingIds(*join);
+  ASSERT_EQ(ids.size(), 2U);
+  EXPECT_EQ(ids[0], 0U);
+  EXPECT_EQ(ids[1], 1U);
+}
 }  // namespace
 }  // namespace gistdb::binder

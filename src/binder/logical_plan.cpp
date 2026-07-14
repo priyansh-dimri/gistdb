@@ -26,6 +26,28 @@ std::vector<OutputColumn> OutputSchema(const LogicalPlanNode& node) {
       node.node);
 }
 
+std::vector<std::uint32_t> CollectBindingIds(const LogicalPlanNode& node) {
+  return std::visit(
+      [](const auto& n) -> std::vector<std::uint32_t> {
+        using T = std::decay_t<decltype(n)>;
+        if constexpr (std::is_same_v<T, LogicalScan>) {
+          return {n.binding_id};
+        } else if constexpr (std::is_same_v<T, LogicalJoin>) {
+          auto ids = CollectBindingIds(*n.left);
+          auto right_ids = CollectBindingIds(*n.right);
+          ids.insert(ids.end(), right_ids.begin(), right_ids.end());
+          return ids;
+        } else if constexpr (std::is_same_v<T, LogicalFilter>) {  // NOLINT
+          return CollectBindingIds(*n.input);
+        } else if constexpr (std::is_same_v<T, LogicalAggregate>) {
+          return CollectBindingIds(*n.input);
+        } else {  // LogicalProjection
+          return CollectBindingIds(*n.input);
+        }
+      },
+      node.node);
+}
+
 std::unique_ptr<LogicalPlanNode> MakeLogicalScan(std::uint32_t binding_id,
                                                  std::uint32_t physical_table_id,
                                                  std::vector<OutputColumn> output_columns) {
