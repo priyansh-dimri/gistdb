@@ -34,6 +34,8 @@ add_library(gistdb_core STATIC
   src/binder/parser.cpp
   src/binder/type_coercion.cpp
   src/binder/logical_plan.cpp
+  src/binder/resolution.cpp
+  src/binder/binder.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(gistdb_core PRIVATE

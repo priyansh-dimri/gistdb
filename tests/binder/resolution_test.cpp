@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <optional>
 #include <string>
 
@@ -17,6 +18,11 @@ using gistdb::catalog::Catalog;
 using gistdb::catalog::ColumnDef;
 using gistdb::test_utils::ScopedTempFile;
 
+std::filesystem::path FreshPath(const ScopedTempFile& temp) {
+  std::filesystem::remove(temp.Path());
+  return temp.Path();
+}
+
 Catalog MakeTestCatalog(const std::filesystem::path& path) {
   Catalog catalog = Catalog::CreateNew(path);
   catalog.CreateTable("users",
@@ -30,7 +36,7 @@ Catalog MakeTestCatalog(const std::filesystem::path& path) {
 
 TEST(ResolutionScopeTest, RegisterTableAssignsBindingIdsInCallOrder) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   std::uint32_t users_id = scope.RegisterTable("users", std::nullopt, catalog);
@@ -42,7 +48,7 @@ TEST(ResolutionScopeTest, RegisterTableAssignsBindingIdsInCallOrder) {
 
 TEST(ResolutionScopeTest, RegisterTableThrowsOnUnknownTable) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   EXPECT_THROW((void)scope.RegisterTable("ghosts", std::nullopt, catalog), ResolutionException);
@@ -50,7 +56,7 @@ TEST(ResolutionScopeTest, RegisterTableThrowsOnUnknownTable) {
 
 TEST(ResolutionScopeTest, RegisterTableThrowsOnDuplicateUnaliasedSelfJoin) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   scope.RegisterTable("users", std::nullopt, catalog);
@@ -59,7 +65,7 @@ TEST(ResolutionScopeTest, RegisterTableThrowsOnDuplicateUnaliasedSelfJoin) {
 
 TEST(ResolutionScopeTest, SelfJoinWithDistinctAliasesSucceeds) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   std::uint32_t u1 = scope.RegisterTable("users", std::string("u1"), catalog);
@@ -72,7 +78,7 @@ TEST(ResolutionScopeTest, SelfJoinWithDistinctAliasesSucceeds) {
 
 TEST(ResolutionScopeTest, ResolvesQualifiedColumnAgainstBindingName) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   std::uint32_t binding_id = scope.RegisterTable("users", std::string("u"), catalog);
@@ -87,7 +93,7 @@ TEST(ResolutionScopeTest, ResolvesQualifiedColumnAgainstBindingName) {
 
 TEST(ResolutionScopeTest, QualifiedResolveThrowsOnUnknownAlias) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   scope.RegisterTable("users", std::nullopt, catalog);
@@ -98,7 +104,7 @@ TEST(ResolutionScopeTest, QualifiedResolveThrowsOnUnknownAlias) {
 
 TEST(ResolutionScopeTest, QualifiedResolveThrowsOnUnknownColumn) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   scope.RegisterTable("users", std::nullopt, catalog);
@@ -109,7 +115,7 @@ TEST(ResolutionScopeTest, QualifiedResolveThrowsOnUnknownColumn) {
 
 TEST(ResolutionScopeTest, UnqualifiedResolveFindsUniqueMatch) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   scope.RegisterTable("users", std::nullopt, catalog);
@@ -123,7 +129,7 @@ TEST(ResolutionScopeTest, UnqualifiedResolveFindsUniqueMatch) {
 
 TEST(ResolutionScopeTest, UnqualifiedResolveThrowsOnAmbiguousColumn) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   scope.RegisterTable("users", std::string("u1"), catalog);
@@ -135,7 +141,7 @@ TEST(ResolutionScopeTest, UnqualifiedResolveThrowsOnAmbiguousColumn) {
 
 TEST(ResolutionScopeTest, UnqualifiedResolveThrowsWhenColumnNotFoundAnywhere) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   scope.RegisterTable("users", std::nullopt, catalog);
@@ -146,7 +152,7 @@ TEST(ResolutionScopeTest, UnqualifiedResolveThrowsWhenColumnNotFoundAnywhere) {
 
 TEST(ResolutionScopeTest, BindingForReturnsRegisteredTableObject) {
   ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(temp_file.Path());
+  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
   ResolutionScope scope;
   std::uint32_t binding_id = scope.RegisterTable("orders", std::nullopt, catalog);
