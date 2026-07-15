@@ -44,6 +44,7 @@ add_library(gistdb_core STATIC
   src/execution/aggregation_operator.cpp
   src/execution/projection_operator.cpp
   src/storage/buffer_pool_manager.cpp
+  src/execution/seq_scan_operator.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(gistdb_core PRIVATE
