@@ -102,8 +102,6 @@ TEST(AggregationOperatorTest, AvgComputesCorrectAverageIgnoringNulls) {
   EXPECT_FLOAT_EQ(avg_col->GetValue(0), 15.0F);
 }
 
-// Directly catches the MIN-vs-MAX mix-up: MIN and MAX on the same column
-// must produce genuinely different values, not both silently return MIN.
 TEST(AggregationOperatorTest, MinAndMaxOnSameIntColumnProduceDifferentResults) {
   IntCol col;
   col.Append(10);
@@ -162,9 +160,6 @@ TEST(AggregationOperatorTest, NoGroupByProducesSingleRowEvenOverEmptyInput) {
   EXPECT_EQ(count_col->GetValue(0), 0);
 }
 
-// Also verifies output column order: group-by column first, then the
-// aggregate result -- regardless of the two having different underlying
-// storage types (varchar vs int).
 TEST(AggregationOperatorTest, GroupByProducesOneRowPerDistinctKeyInLogicalColumnOrder) {
   VarcharCol category;
   category.Append("a");

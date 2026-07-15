@@ -54,12 +54,6 @@ using GroupKeyValue = std::variant<std::int32_t, float, std::string>;
   throw std::runtime_error("Unhandled AggregateFunctionKind in MakeAccumulator");
 }
 
-// Real FixedWidthColumn<T>/VarcharColumn interface (confirmed against
-// fixed_width_column.cpp/varchar_column.cpp, and independently against
-// hash_join_operator.cpp's real usage): GetValue(i)/IsNull(i) for reading,
-// single-arg Append(value) plus a separate AppendNull() for writing.
-// There is no Value(i) and no two-argument Append(value, is_null)
-// anywhere in this codebase -- every call site below was corrected.
 void SerializeKeyBytes(const ColumnView& col, std::uint32_t row, std::string& out) {
   std::vector<std::uint8_t> bytes;
   std::visit(
@@ -215,23 +209,7 @@ class AggregationOperator::Impl {
     const std::uint32_t batch_size = static_cast<std::uint32_t>(
         std::min<std::size_t>(kVectorSize, group_order_.size() - emit_cursor_));
     DataChunk output(batch_size);
-
-    // builders_ is Impl member state, cleared and rebuilt fresh each call
-    // -- NOT a local. `output`'s ColumnViews point directly into it
-    // (DataChunk never copies column values), so it must outlive this
-    // function call; a local here (the original bug) is destroyed the
-    // instant EmitBatch returns, leaving every ColumnView dangling.
     builders_.Clear();
-
-    // column_order_ records (type, index-within-that-type-vector) for
-    // each column in true LOGICAL position (group-by columns first, then
-    // aggregates, matching LogicalAggregate::output_columns' documented
-    // contract). This is necessary because int_cols/float_cols/
-    // varchar_cols are three separate typed vectors -- assembling output
-    // by walking them one-after-another (the original code) silently
-    // groups columns by storage type instead of logical position, e.g.
-    // GROUP BY a varchar column while SUMming an int column would emit
-    // [sum, category] instead of [category, sum].
     std::vector<std::pair<gistdb::TypeId, std::size_t>> column_order;
 
     for (gistdb::TypeId type : group_by_types_) {
@@ -338,7 +316,7 @@ class AggregationOperator::Impl {
                 } else {
                   out_col.Append(accumulator.Min());
                 }
-              } else {  // MinMaxAccumulator<float>
+              } else {
                 auto& out_col = builders_.float_cols[float_idx++];
                 if (!accumulator.HasValues()) {
                   out_col.AppendNull();
