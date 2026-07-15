@@ -113,6 +113,15 @@ const TableObject* Catalog::GetTable(const std::string& table_name) const {
   return &it->second;
 }
 
+const TableObject* Catalog::GetTableById(std::uint32_t table_id) const {
+  for (const auto& [name, table] : tables_by_name_) {
+    if (table.TableId() == table_id) {
+      return &table;
+    }
+  }
+  return nullptr;
+}
+
 void Catalog::AddRowGroup(const std::string& table_name,
                           gistdb::storage::RowGroupFooterEntry row_group) {
   auto it = tables_by_name_.find(table_name);

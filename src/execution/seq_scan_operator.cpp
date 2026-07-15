@@ -1,6 +1,7 @@
 #include "gistdb/execution/seq_scan_operator.hpp"
 
 #include <cstring>
+#include <iostream>
 #include <type_traits>
 
 #include "gistdb/constants.hpp"
@@ -111,6 +112,17 @@ class SeqScanOperator::Impl {
     return false;
   }
 
+  [[nodiscard]] std::vector<std::byte> FetchWholeRegion(const gistdb::storage::PageRange& range) {
+    std::vector<std::byte> scratch(static_cast<std::size_t>(range.page_count) *
+                                   gistdb::kPageSizeBytes);
+    for (std::uint32_t i = 0; i < range.page_count; ++i) {
+      std::byte* page = buffer_pool_.FetchPage(range.start_page_id + i);
+      std::memcpy(scratch.data() + (i * gistdb::kPageSizeBytes), page, gistdb::kPageSizeBytes);
+      buffer_pool_.UnpinPage(range.start_page_id + i, false);
+    }
+    return scratch;
+  }
+
   void AppendColumn(DataChunk& chunk, const gistdb::storage::RowGroupFooterEntry& row_group,
                     std::uint32_t ordinal, std::uint32_t start_row, std::uint32_t row_count) {
     gistdb::TypeId type = table_.Column(ordinal).type;
@@ -142,7 +154,8 @@ class SeqScanOperator::Impl {
     const auto* values = reinterpret_cast<const T*>(page);
 
     const auto& bitmap_range = row_group.ValidityBitmapRegion();
-    std::byte* bitmap_page = buffer_pool_.FetchPage(bitmap_range.start_page_id);
+    std::vector<std::byte> bitmap_scratch = FetchWholeRegion(bitmap_range);
+    const std::byte* bitmap_page = bitmap_scratch.data();
 
     storage.emplace_back();
     gistdb::storage::FixedWidthColumn<T>& column = storage.back();
@@ -156,7 +169,6 @@ class SeqScanOperator::Impl {
     }
 
     buffer_pool_.UnpinPage(page_id, false);
-    buffer_pool_.UnpinPage(bitmap_range.start_page_id, false);
     chunk.AddColumn(&column);
   }
 
@@ -168,12 +180,11 @@ class SeqScanOperator::Impl {
     const auto& offsets_range = entry.OffsetsPages();
     const auto& data_range = entry.DataPages();
 
-    const std::uint32_t offsets_page_id = offsets_range.start_page_id + vector_index_;
-    std::byte* offsets_page = buffer_pool_.FetchPage(offsets_page_id);
-    const auto* offsets = reinterpret_cast<const std::uint32_t*>(offsets_page);
+    std::vector<std::byte> offsets_scratch = FetchWholeRegion(offsets_range);
+    const auto* offsets = reinterpret_cast<const std::uint32_t*>(offsets_scratch.data());
 
-    const std::uint32_t byte_start = offsets[0];
-    const std::uint32_t byte_end = offsets[row_count];
+    const std::uint32_t byte_start = offsets[start_row];
+    const std::uint32_t byte_end = offsets[start_row + row_count];
     const std::uint32_t first_data_page =
         data_range.start_page_id + (byte_start / gistdb::kPageSizeBytes);
     const std::uint32_t last_data_page =
@@ -186,7 +197,8 @@ class SeqScanOperator::Impl {
                   gistdb::kPageSizeBytes);
       buffer_pool_.UnpinPage(p, false);
     }
-    const std::uint32_t scratch_base = first_data_page * gistdb::kPageSizeBytes;
+    const std::uint32_t scratch_base =
+        (first_data_page - data_range.start_page_id) * gistdb::kPageSizeBytes;
 
     const auto& bitmap_range = row_group.ValidityBitmapRegion();
     std::byte* bitmap_page = buffer_pool_.FetchPage(bitmap_range.start_page_id);
@@ -195,16 +207,19 @@ class SeqScanOperator::Impl {
     gistdb::storage::VarcharColumn& column = varchar_storage_.back();
     for (std::uint32_t i = 0; i < row_count; ++i) {
       bool is_null = !IsColumnValidAtRow(bitmap_page, row_group.RowCount(), ordinal, start_row + i);
-      std::uint32_t s = offsets[i] - scratch_base;
-      std::uint32_t e = offsets[i + 1] - scratch_base;
+      std::uint32_t s = offsets[start_row + i] - scratch_base;
+      std::uint32_t e = offsets[start_row + i + 1] - scratch_base;
       if (is_null) {
         column.AppendNull();
       } else {
+        std::cerr << "offsets: " << offsets[start_row + i] << " " << offsets[start_row + i + 1]
+                  << "\n";
+        std::cerr << "scratch_base: " << scratch_base << "\n";
+        std::cerr << "s=" << s << " e=" << e << "\n";
         column.Append(std::string_view(reinterpret_cast<const char*>(scratch.data() + s), e - s));
       }
     }
 
-    buffer_pool_.UnpinPage(offsets_page_id, false);
     buffer_pool_.UnpinPage(bitmap_range.start_page_id, false);
     chunk.AddColumn(&column);
   }

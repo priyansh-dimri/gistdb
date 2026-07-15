@@ -24,7 +24,7 @@ using AccumulatorVariant =
                  AvgIntAccumulator, AvgFloatAccumulator, MinMaxAccumulator<std::int32_t>,
                  MinMaxAccumulator<float>, MinMaxVarcharAccumulator>;
 
-using GroupKeyValue = std::variant<std::int32_t, float, std::string>;
+using GroupKeyValue = std::variant<std::monostate, std::int32_t, float, std::string>;
 
 [[nodiscard]] AccumulatorVariant MakeAccumulator(const AggregateSpec& spec) {
   switch (spec.function) {
@@ -82,6 +82,9 @@ void SerializeKeyBytes(const ColumnView& col, std::uint32_t row, std::string& ou
 [[nodiscard]] GroupKeyValue ExtractKeyValue(const ColumnView& col, std::uint32_t row) {
   return std::visit(
       [&](const auto* column) -> GroupKeyValue {
+        if (column->IsNull(row)) {
+          return std::monostate{};
+        }
         using T = std::decay_t<decltype(*column)>;
         if constexpr (std::is_same_v<T,
                                      gistdb::storage::FixedWidthColumn<std::int32_t>>) {  // NOLINT
@@ -255,7 +258,19 @@ class AggregationOperator::Impl {
         std::visit(
             [&](const auto& v) {
               using V = std::decay_t<decltype(v)>;
-              if constexpr (std::is_same_v<V, std::int32_t>) {
+              if constexpr (std::is_same_v<V, std::monostate>) {
+                switch (group_by_types_[g]) {
+                  case gistdb::TypeId::kInteger:
+                    builders_.int_cols[int_idx++].AppendNull();
+                    break;
+                  case gistdb::TypeId::kFloat:
+                    builders_.float_cols[float_idx++].AppendNull();
+                    break;
+                  case gistdb::TypeId::kVarchar:
+                    builders_.varchar_cols[varchar_idx++].AppendNull();
+                    break;
+                }
+              } else if constexpr (std::is_same_v<V, std::int32_t>) {
                 builders_.int_cols[int_idx++].Append(v);
               } else if constexpr (std::is_same_v<V, float>) {
                 builders_.float_cols[float_idx++].Append(v);

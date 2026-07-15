@@ -11,8 +11,14 @@ std::vector<OutputColumn> OutputSchema(const LogicalPlanNode& node) {
   return std::visit(
       [](const auto& n) -> std::vector<OutputColumn> {
         using T = std::decay_t<decltype(n)>;
-        if constexpr (std::is_same_v<T, LogicalScan> || std::is_same_v<T, LogicalAggregate> ||
-                      std::is_same_v<T, LogicalProjection>) {
+        if constexpr (std::is_same_v<T, LogicalScan>) {
+          std::vector<OutputColumn> result;
+          for (std::uint32_t ordinal : n.required_ordinals) {
+            result.push_back(n.output_columns[ordinal]);  // NOLINT
+          }
+          return result;
+        } else if constexpr (std::is_same_v<T, LogicalAggregate> ||
+                             std::is_same_v<T, LogicalProjection>) {
           return n.output_columns;
         } else if constexpr (std::is_same_v<T, LogicalFilter>) {
           return OutputSchema(*n.input);

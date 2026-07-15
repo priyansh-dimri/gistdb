@@ -21,8 +21,10 @@ class Catalog {
 
   // Returns nullptr if no such table exists.
   const TableObject* GetTable(const std::string& table_name) const;
+  const TableObject* GetTableById(std::uint32_t table_id) const;
 
   void AddRowGroup(const std::string& table_name, gistdb::storage::RowGroupFooterEntry row_group);
+  gistdb::storage::DiskManager& GetDiskManager() { return disk_manager_; }
 
  private:
   explicit Catalog(gistdb::storage::DiskManager disk_manager);
