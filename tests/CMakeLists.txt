@@ -52,3 +52,4 @@ add_gistdb_test(aggregation_operator_test execution/aggregation_operator_test.cp
 add_gistdb_test(projection_operator_test execution/projection_operator_test.cpp)
 add_gistdb_test(buffer_pool_manager_test storage/buffer_pool_manager_test.cpp)
 add_gistdb_test(seq_scan_operator_test execution/seq_scan_operator_test.cpp)
+add_gistdb_test(insert_executor_test execution/insert_executor_test.cpp)
