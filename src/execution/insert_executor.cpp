@@ -163,7 +163,7 @@ void InsertExecutor::FlushRowGroup() {
     return gistdb::storage::PageRange{start_page, page_count};
   };
 
-  std::vector<gistdb::storage::ColumnFooterEntry> column_entries; 
+  std::vector<gistdb::storage::ColumnFooterEntry> column_entries;
   for (auto& col : staging_->Columns()) {
     std::visit(
         [&](auto& column) {

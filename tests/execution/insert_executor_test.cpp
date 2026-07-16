@@ -205,7 +205,7 @@ TEST(InsertExecutorTest, ThrowsWhenInsertValueIsNotABoundConstant) {
 
   InsertExecutor executor(catalog, table_id);
   std::vector<std::unique_ptr<BoundExpression>> row;
-  row.push_back(MakeColumnRef(0, 0, gistdb::TypeId::kInteger));   
+  row.push_back(MakeColumnRef(0, 0, gistdb::TypeId::kInteger));
   EXPECT_THROW(executor.InsertRow(row), std::runtime_error);
 }
 
