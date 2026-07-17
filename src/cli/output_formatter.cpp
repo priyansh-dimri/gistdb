@@ -1,0 +1,52 @@
+// src/cli/output_formatter.cpp
+#include "gistdb/cli/output_formatter.hpp"
+
+#include <iomanip>
+#include <sstream>
+#include <type_traits>
+#include <variant>
+
+#include "gistdb/storage/fixed_width_column.hpp"
+// #include "gistdb/storage/varchar_column.hpp"
+
+namespace gistdb::cli {
+
+std::string OutputFormatter::FormatValue(const gistdb::execution::ColumnView& column,
+                                         std::uint32_t row) {
+  return std::visit(
+      [&](const auto* col) -> std::string {
+        using T = std::decay_t<decltype(*col)>;
+        if (col->IsNull(row)) {
+          return "NULL";
+        }
+        if constexpr (std::is_same_v<T, gistdb::storage::FixedWidthColumn<std::int32_t>>) {
+          return std::to_string(col->GetValue(row));
+        } else if constexpr (std::is_same_v<T, gistdb::storage::FixedWidthColumn<float>>) {
+          // Decision B.VII.28's own wording: "a fixed, reasonable
+          // precision (e.g., 6 significant digits)".
+          std::ostringstream oss;
+          oss << std::setprecision(6) << col->GetValue(row);
+          return oss.str();
+        } else {  // VarcharColumn
+          return std::string(col->GetValue(row));
+        }
+      },
+      column);
+}
+
+void OutputFormatter::WriteChunk(const gistdb::execution::DataChunk& chunk, std::ostream& out) {
+  for (std::uint32_t row = 0; row < chunk.RowCount(); ++row) {
+    if (!chunk.IsRowSelected(row)) {
+      continue;
+    }
+    for (std::size_t col = 0; col < chunk.NumColumns(); ++col) {
+      if (col > 0) {
+        out << '\t';
+      }
+      out << FormatValue(chunk.Column(col), row);
+    }
+    out << '\n';
+  }
+}
+
+}  // namespace gistdb::cli
