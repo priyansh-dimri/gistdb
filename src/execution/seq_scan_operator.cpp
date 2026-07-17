@@ -79,6 +79,10 @@ class SeqScanOperator::Impl {
     float_storage_.clear();
     varchar_storage_.clear();
 
+    int_storage_.reserve(required_ordinals_.size());
+    float_storage_.reserve(required_ordinals_.size());
+    varchar_storage_.reserve(required_ordinals_.size());
+
     DataChunk chunk(this_vector_rows);
     for (std::uint32_t i = 0; i < this_vector_rows; ++i) {
       chunk.SetRowSelected(i, true);

@@ -16,4 +16,4 @@ test:
 
 run:
 	cmake --build build --target gistdb
-	./build/gistdb $(or $(DB),/tmp/gistdb.db)
+	./build/gistdb $(or $(DB),/tmp/gistdb.gistdb)
