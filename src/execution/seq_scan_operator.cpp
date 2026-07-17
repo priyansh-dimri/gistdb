@@ -1,7 +1,6 @@
 #include "gistdb/execution/seq_scan_operator.hpp"
 
 #include <cstring>
-#include <iostream>
 #include <type_traits>
 
 #include "gistdb/constants.hpp"
@@ -212,10 +211,6 @@ class SeqScanOperator::Impl {
       if (is_null) {
         column.AppendNull();
       } else {
-        std::cerr << "offsets: " << offsets[start_row + i] << " " << offsets[start_row + i + 1]
-                  << "\n";
-        std::cerr << "scratch_base: " << scratch_base << "\n";
-        std::cerr << "s=" << s << " e=" << e << "\n";
         column.Append(std::string_view(reinterpret_cast<const char*>(scratch.data() + s), e - s));
       }
     }

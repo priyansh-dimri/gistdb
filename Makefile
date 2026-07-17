@@ -1,4 +1,4 @@
-.PHONY: format tidy lint test
+.PHONY: format tidy lint test run
 
 format:
 	clang-format -i $$(find include src tests \( -name '*.hpp' -o -name '*.cpp' \))
@@ -13,3 +13,7 @@ test:
 	cmake .. && \
 	cmake --build . && \
 	ctest --output-on-failure
+
+run:
+	cmake --build build --target gistdb
+	./build/gistdb $(or $(DB),/tmp/gistdb.db)

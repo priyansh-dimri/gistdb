@@ -23,7 +23,7 @@ std::string OutputFormatter::FormatValue(const gistdb::execution::ColumnView& co
           std::ostringstream oss;
           oss << std::setprecision(6) << col->GetValue(row);
           return oss.str();
-        } else { 
+        } else {
           return std::string(col->GetValue(row));
         }
       },

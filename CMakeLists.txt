@@ -67,5 +67,8 @@ set_target_properties(pg_query PROPERTIES
 )
 target_link_libraries(gistdb_core PUBLIC pg_query)
 
+add_executable(gistdb src/main.cpp)
+target_link_libraries(gistdb PRIVATE gistdb_core)
+
 enable_testing()
 add_subdirectory(tests)
