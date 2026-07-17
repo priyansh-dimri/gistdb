@@ -107,8 +107,23 @@ using gistdb::execution::BoundColumnRef;
       node.node);
 }
 
-// Only recognizes `column OP constant` with the column on the left
-// -- `constant OP column` isn't handled; a known, disclosed limitation.
+void RewriteColumnRefsToPhysicalPositions(gistdb::execution::BoundExpression& expr,
+                                          const LogicalPlanNode& child) {
+  std::visit(
+      [&](auto& node) {
+        using N = std::decay_t<decltype(node)>;
+        if constexpr (std::is_same_v<N, BoundColumnRef>) {
+          node.ordinal = static_cast<std::uint32_t>(FindColumnPosition(child, node));
+        } else if constexpr (std::is_same_v<N, gistdb::execution::BinaryOpNode>) {
+          RewriteColumnRefsToPhysicalPositions(*node.left, child);
+          RewriteColumnRefsToPhysicalPositions(*node.right, child);
+        } else if constexpr (std::is_same_v<N, gistdb::execution::UnaryOpNode>) {
+          RewriteColumnRefsToPhysicalPositions(*node.operand, child);
+        }
+      },
+      expr.node);
+}
+
 [[nodiscard]] std::optional<gistdb::execution::ZoneMapSkipCondition> TryExtractZoneMapSkip(
     const gistdb::execution::BoundExpression& predicate, const LogicalScan& scan) {
   const auto* bin = std::get_if<gistdb::execution::BinaryOpNode>(&predicate.node);
@@ -158,11 +173,13 @@ using gistdb::execution::BoundColumnRef;
             if (table == nullptr) {
               throw std::runtime_error("Optimizer::Translate: unknown table_id");
             }
+            RewriteColumnRefsToPhysicalPositions(*payload.predicate, *payload.input);
             auto scan_op = std::make_unique<gistdb::execution::SeqScanOperator>(
                 *table, scan->required_ordinals, buffer_pool, skip);
             return std::make_unique<gistdb::execution::FilterOperator>(
                 std::move(scan_op), std::move(payload.predicate));
           }
+          RewriteColumnRefsToPhysicalPositions(*payload.predicate, *payload.input);
           auto child = Translate(std::move(payload.input), catalog, buffer_pool);
           return std::make_unique<gistdb::execution::FilterOperator>(std::move(child),
                                                                      std::move(payload.predicate));
@@ -239,6 +256,9 @@ using gistdb::execution::BoundColumnRef;
               std::move(specs));
 
         } else {
+          for (auto& expr : payload.select_expressions) {
+            RewriteColumnRefsToPhysicalPositions(*expr, *payload.input);
+          }
           auto child = Translate(std::move(payload.input), catalog, buffer_pool);
           return std::make_unique<gistdb::execution::ProjectionOperator>(
               std::move(child), std::move(payload.select_expressions));
