@@ -47,6 +47,7 @@ add_library(gistdb_core STATIC
   src/execution/seq_scan_operator.cpp
   src/execution/insert_executor.cpp
   src/cli/output_formatter.cpp 
+  src/cli/driver.cpp
 )
 target_include_directories(gistdb_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(gistdb_core PRIVATE

@@ -1,4 +1,3 @@
-// src/cli/output_formatter.cpp
 #include "gistdb/cli/output_formatter.hpp"
 
 #include <iomanip>
@@ -7,7 +6,6 @@
 #include <variant>
 
 #include "gistdb/storage/fixed_width_column.hpp"
-// #include "gistdb/storage/varchar_column.hpp"
 
 namespace gistdb::cli {
 
@@ -22,12 +20,10 @@ std::string OutputFormatter::FormatValue(const gistdb::execution::ColumnView& co
         if constexpr (std::is_same_v<T, gistdb::storage::FixedWidthColumn<std::int32_t>>) {
           return std::to_string(col->GetValue(row));
         } else if constexpr (std::is_same_v<T, gistdb::storage::FixedWidthColumn<float>>) {
-          // Decision B.VII.28's own wording: "a fixed, reasonable
-          // precision (e.g., 6 significant digits)".
           std::ostringstream oss;
           oss << std::setprecision(6) << col->GetValue(row);
           return oss.str();
-        } else {  // VarcharColumn
+        } else { 
           return std::string(col->GetValue(row));
         }
       },

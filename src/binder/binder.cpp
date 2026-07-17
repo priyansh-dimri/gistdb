@@ -442,8 +442,12 @@ struct FromClauseResult {
     } else {
       auto bound = BindScalarExpression(*item.expression, scope);
       ExpressionType type = bound->ResultType();
+      std::string display_name;
+      if (const auto* col_ref = std::get_if<ColumnRefNode>(&item.expression->node)) {
+        display_name = col_ref->column_name;
+      }
       select_expressions.push_back(std::move(bound));
-      output_columns.push_back(OutputColumn{"", type});
+      output_columns.push_back(OutputColumn{display_name, type});
     }
   }
   return MakeLogicalProjection(std::move(plan), std::move(select_expressions),

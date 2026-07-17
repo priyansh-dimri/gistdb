@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <sstream>
-// #include <string>
 
 #include "gistdb/execution/data_chunk.hpp"
 #include "gistdb/storage/fixed_width_column.hpp"
