@@ -48,8 +48,9 @@ The CLI drops you into a fully functional REPL:
 GistDB> CREATE TABLE users (id int4, name varchar);
 Table created (id=0).
 
-GistDB> INSERT INTO users (id, name) VALUES (1, 'alice'), (2, 'bob'), (3, 'carol');
-3 row(s) inserted (0.001s)
+GistDB> INSERT INTO users (id, name) 
+      > VALUES (1, 'alice'), (2, 'bob'), (3, 'carol');
+3 row(s) inserted (0.000s)
 
 GistDB> SELECT id, name FROM users WHERE id > 1;
 +----+-------+
@@ -58,7 +59,7 @@ GistDB> SELECT id, name FROM users WHERE id > 1;
 | 2  | bob   |
 | 3  | carol |
 +----+-------+
-(2 rows returned in 0.001s)
+(2 rows returned in 0.000s)
 ```
 
 ## Usage Examples
