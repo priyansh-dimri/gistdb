@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /gistdb
 COPY . .
 
-RUN cd third_party/libpg_query && make
+RUN cd third_party/libpg_query && make CC=clang-18
 
 RUN cmake -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
