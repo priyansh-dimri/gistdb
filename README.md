@@ -8,29 +8,118 @@
 
 </div>
 
-GistDB is a single-threaded analytical database engine that stores data column-by-column instead of row-by-row, and processes it in batches of rows at a time rather than one row at a time.
+GistDB is a single-threaded analytical database engine that stores data **column-by-column** instead of row-by-row and processes query results in vectorized batches of up to 1,024 rows at a time. It follows the architectural paradigms of modern OLAP systems like DuckDB and ClickHouse, optimizing analytical workloads through columnar storage and batch-oriented execution rather than traditional row-at-a-time processing.
 
-It is implemented from scratch in modern C++ with an on-disk storage format, buffer pool manager, rule-based query optimizer, and vectorized execution engine.
+With the sole exception of `libpg_query` (used strictly to translate raw SQL strings into an Abstract Syntax Tree), the entire data stack is implemented from the ground up. This includes a custom columnar storage format, a buffer pool manager, a rule-based query optimizer and a pull-based vectorized execution pipeline.
 
-## What it does
+## Architectural Design Decisions
 
-- Stores tables in a custom columnar file format
-- Parses real SQL via the `libpg_query` library.
-- Supports `CREATE TABLE`, `INSERT`, and `SELECT` with filtering, joins, grouping, and aggregates
-- Optimizes queries with predicate push down and column pruning before execution
-- Executes queries using a vectorized, pull based engine that processes 1,024 rows at a time
+The structural decisions are documented in [`docs/decisions/`](docs/decisions/). Some of the major ones are briefly summarized below::
 
-## What it does NOT do
+- **Hardware-Aligned Columnar Layout:** A 4KB storage page holds exactly 1,024 `int32`/`float32` values. This perfectly matches the execution engine's 1,024-row batch size by construction, meaning one disk page strictly translates to one execution vector.
+- **Zero-Copy by Default:** Most execution operators read directly from memory pinned by the Buffer Pool. There are only two disclosed exceptions: Hash Join's build side (which must outlive the buffer pool's eviction policy across the entire probe phase) and Projection (the point where data permanently leaves the engine).
+- **Deterministic Rule-Based Optimization:** The engine utilizes a two-pass rule-based optimizer. Predicate pushdown and column pruning run exactly once, in a fixed order, ensuring stable execution plans without the overhead of cardinality estimation or statistical plan searches.
+- **Zone-Map I/O Pruning:** A simple `column > constant` predicate can safely eliminate an entire 10,240-row chunk from the execution pipeline by evaluating footer metadata already resident in memory, preventing unnecessary disk I/O.
+- **Append-Only Storage:** Because `UPDATE` and `DELETE` operations are intentionally out of scope, there is no need for LSM-Tree compaction or tombstone tracking. The storage engine writes to a single growing file, architecturally closer to Apache Parquet.
 
-- No `UPDATE` or `DELETE` queries.
-- No transactions and no concurrency.
-- No crash recovery, thus no write-ahead log.
-- No network layer. It only runs as a local CLI, SQL typed in via standard input.
+## Quick Start
+
+```bash
+git clone https://github.com/priyansh-dimri/gistdb.git
+cd gistdb
+git submodule update --init --recursive
+
+# Build libpg_query dependency
+cd third_party/libpg_query
+make
+cd ../..
+
+# Build the GistDB engine
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+
+# Launch the REPL
+./build/gistdb mydb.gistdb
+```
+
+The CLI drops you into a fully functional REPL:
+
+```sql
+GistDB> CREATE TABLE users (id int4, name varchar);
+Table created (id=0).
+
+GistDB> INSERT INTO users (id, name) VALUES (1, 'alice'), (2, 'bob'), (3, 'carol');
+3 row(s) inserted (0.001s)
+
+GistDB> SELECT id, name FROM users WHERE id > 1;
++----+-------+
+| id | name  |
++----+-------+
+| 2  | bob   |
+| 3  | carol |
++----+-------+
+(2 rows returned in 0.001s)
+```
+
+## Usage Examples
+
+### Filtering and Projection
+
+```sql
+SELECT name FROM users WHERE id > 1;
+```
+
+### In-Memory Hash Joins
+
+```sql
+CREATE TABLE orders (id int4, user_id int4, amount int4);
+INSERT INTO orders (id, user_id, amount) VALUES (100, 1, 50), (101, 2, 30);
+SELECT users.name, orders.amount 
+FROM users JOIN orders 
+ON users.id = orders.user_id;
+```
+
+### Aggregation and Grouping
+
+```sql
+SELECT user_id, SUM(amount) FROM orders GROUP BY user_id;
+```
+
+### Headless Execution
+
+Piping input or redirecting output automatically switches the engine to plain tab-separated (TSV) rows instead of a formatted boxed table, mimicking the behavior of standard `psql` or `mysql` clients in non-TTY environments:
+
+```bash
+echo "SELECT * FROM users;" | ./build/gistdb mydb.gistdb > out.tsv
+```
+
+## Running with Docker
+
+```bash
+docker build -t gistdb .
+docker run -it --rm -v "$(pwd)/data:/data" gistdb /data/mydb.gistdb
+```
+
+## Scope Boundaries
+
+### What it does
+
+- Stores tables in a custom columnar file format.
+- Parses SQL via `libpg_query`.
+- Executes `CREATE TABLE`, `INSERT`, and `SELECT` (Filters, Joins, Grouping, Aggregates).
+- Skips entire row groups via zone-map metadata before touching disk.
+
+### What it doesn't do
+
+- **No `UPDATE` or `DELETE`:** Append-only analytical workloads only.
+- **No Concurrency:** Single-threaded execution; no ACID transaction overhead.
+- **No Crash Recovery:** No Write-Ahead Logging (WAL).
+- **No Network Stack:** Local CLI execution only; SQL parsing via standard input.
 
 ## Tech Stack
 
 - **Language:** C++23
-- **Build system:** CMake
-- **SQL parsing:** libpg_query
-- **Testing:** Google Test
-- **Linting:** Clang-Tidy, Clang-Format
+- **Build System:** CMake
+- **AST Parser:** libpg_query
+- **Testing:** Google Test (GTest)
+- **Code Quality:** Clang-Tidy, Clang-Format

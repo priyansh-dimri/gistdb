@@ -25,7 +25,7 @@ void HandleSigint(int /*signum*/) {
 }
 
 void InstallSigintHandler() {
-  struct sigaction sa{};
+  struct sigaction sa {};
   sa.sa_handler = HandleSigint;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
