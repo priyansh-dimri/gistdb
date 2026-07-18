@@ -206,14 +206,6 @@ TEST(BinderTest, NonAggregatedColumnNotInGroupByThrowsWithDecisionB14Message) {
   }
 }
 
-TEST(BinderTest, AggregateQueryIsCurrentlyBlockedByUnwiredProjection) {
-  ScopedTempFile temp_file;
-  Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
-
-  ParsedStatement stmt = Parser::ParseSingleStatement("SELECT COUNT(*) FROM users");
-  EXPECT_THROW((void)Binder::Bind(stmt, catalog), BindException);
-}
-
 TEST(BinderTest, InsertWithPartialColumnListIsCurrentlyBlocked) {
   ScopedTempFile temp_file;
   Catalog catalog = MakeTestCatalog(FreshPath(temp_file));

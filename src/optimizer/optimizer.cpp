@@ -98,9 +98,16 @@ using gistdb::execution::BoundColumnRef;
                    FindColumnPosition(*payload.left, ref);
           }
           return FindColumnPosition(*payload.right, ref);
+        } else if constexpr (std::is_same_v<T, LogicalAggregate>) {
+          if (ref.table_id != gistdb::binder::kAggregateOutputBindingId) {
+            throw std::runtime_error(
+                "FindColumnPosition: a raw table column cannot be resolved above a "
+                "LogicalAggregate -- only its own computed output columns are reachable here");
+          }
+          return ref.ordinal;
         } else {
           throw std::runtime_error(
-              "FindColumnPosition: Aggregate/Projection as a Join operand is unsupported -- no "
+              "FindColumnPosition: Projection as a Join operand is unsupported -- no "
               "subquery-in-FROM support yet (Binder Checkpoint, Decision B.16)");
         }
       },

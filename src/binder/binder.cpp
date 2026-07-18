@@ -111,6 +111,22 @@ void CollectColumnRefs(const BoundExpression& expr, std::vector<BoundColumnRef>&
   throw BindException("Unhandled aggregate function kind");
 }
 
+[[nodiscard]] gistdb::TypeId AggregateOutputTypeId(AggregateFunctionKind kind,
+                                                   std::optional<gistdb::TypeId> argument_type) {
+  switch (kind) {
+    case AggregateFunctionKind::kCountStar:
+    case AggregateFunctionKind::kCount:
+      return gistdb::TypeId::kInteger;
+    case AggregateFunctionKind::kAvg:
+      return gistdb::TypeId::kFloat;
+    case AggregateFunctionKind::kSum:
+    case AggregateFunctionKind::kMin:
+    case AggregateFunctionKind::kMax:
+      return *argument_type;
+  }
+  throw BindException("Unhandled aggregate function kind");
+}
+
 [[nodiscard]] AggregateCall BindAggregateCall(const FunctionCallNode& call,
                                               const ResolutionScope& scope) {
   std::string name = call.name;
@@ -364,6 +380,7 @@ struct FromClauseResult {
       !aggregate_items.empty() || !select.group_by.empty() || select.having_clause != nullptr;
 
   std::vector<BoundColumnRef> group_by_cols;
+  std::vector<AggregateCall> aggregates;
   if (is_aggregate_query) {
     if (select.select_list.empty() ||
         std::any_of(select.select_list.begin(), select.select_list.end(),
@@ -371,20 +388,21 @@ struct FromClauseResult {
       throw BindException("SELECT * cannot be combined with GROUP BY or aggregate functions");
     }
 
+    std::vector<std::string> group_by_names;
     for (const auto& group_expr : select.group_by) {
       const auto* column_ref = std::get_if<ColumnRefNode>(&group_expr->node);
       if (column_ref == nullptr) {
         throw BindException("GROUP BY currently only supports plain column references");
       }
       group_by_cols.push_back(scope.Resolve(*column_ref));
+      group_by_names.push_back(column_ref->column_name);
     }
 
-    std::vector<AggregateCall> aggregates;
     std::vector<OutputColumn> output_columns;
-    for (const auto& col : group_by_cols) {
-      output_columns.push_back(OutputColumn{// NOLINT
-                                            .display_name = "",
-                                            .type = gistdb::execution::ToExpressionType(col.type)});
+    for (std::size_t g = 0; g < group_by_cols.size(); ++g) {
+      output_columns.push_back(  // NOLINT
+          OutputColumn{group_by_names[g],
+                       gistdb::execution::ToExpressionType(group_by_cols[g].type)});
     }
     for (const auto& [index, call] : aggregate_items) {
       AggregateCall agg = BindAggregateCall(*call, scope);
@@ -412,8 +430,8 @@ struct FromClauseResult {
       }
     }
 
-    plan = MakeLogicalAggregate(std::move(plan), std::move(group_by_cols), std::move(aggregates),
-                                std::move(output_columns));
+    plan =
+        MakeLogicalAggregate(std::move(plan), group_by_cols, aggregates, std::move(output_columns));
 
     if (select.having_clause != nullptr) {
       plan = MakeLogicalFilter(std::move(plan), BindPredicate(*select.having_clause, scope));
@@ -423,10 +441,38 @@ struct FromClauseResult {
   std::vector<std::unique_ptr<BoundExpression>> select_expressions;
   std::vector<OutputColumn> output_columns;
   if (is_aggregate_query) {
-    throw BindException(
-        "Projection after GROUP BY/aggregate is not yet wired up -- output_columns exist on "
-        "LogicalAggregate but nothing yet re-exposes them as selectable expressions for "
-        "Projection. Flagging rather than guessing at a shape for this.");
+    std::size_t next_aggregate_index = 0;
+    for (std::size_t i = 0; i < select.select_list.size(); ++i) {
+      bool item_is_aggregate = std::any_of(aggregate_items.begin(), aggregate_items.end(),
+                                           [i](const auto& p) { return p.first == i; });
+      if (item_is_aggregate) {
+        auto position = static_cast<std::uint32_t>(group_by_cols.size() + next_aggregate_index);
+        const AggregateCall& agg = aggregates[next_aggregate_index];
+        gistdb::TypeId result_type = AggregateOutputTypeId(
+            agg.function,
+            agg.argument.has_value() ? std::optional(agg.argument->type) : std::nullopt);
+        select_expressions.push_back(
+            gistdb::execution::MakeColumnRef(kAggregateOutputBindingId, position, result_type));
+        output_columns.push_back(OutputColumn{aggregate_items[next_aggregate_index].second->name,
+                                              gistdb::execution::ToExpressionType(result_type)});
+        ++next_aggregate_index;
+      } else {
+        const auto* column_ref =
+            std::get_if<ColumnRefNode>(&select.select_list[i].expression->node);
+        BoundColumnRef resolved = scope.Resolve(*column_ref);
+        auto it = std::find_if(
+            group_by_cols.begin(), group_by_cols.end(), [&](const BoundColumnRef& key) {
+              return key.table_id == resolved.table_id && key.ordinal == resolved.ordinal;
+            });
+        auto position = static_cast<std::uint32_t>(std::distance(group_by_cols.begin(), it));
+        select_expressions.push_back(
+            gistdb::execution::MakeColumnRef(kAggregateOutputBindingId, position, resolved.type));
+        output_columns.push_back(OutputColumn{column_ref->column_name,
+                                              gistdb::execution::ToExpressionType(resolved.type)});
+      }
+    }
+    return MakeLogicalProjection(std::move(plan), std::move(select_expressions),
+                                 std::move(output_columns));
   }
   for (const SelectItem& item : select.select_list) {
     if (item.is_wildcard) {

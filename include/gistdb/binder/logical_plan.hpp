@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -51,6 +52,9 @@ struct AggregateCall {
   AggregateFunctionKind function = AggregateFunctionKind::kCountStar;
   std::optional<gistdb::execution::BoundColumnRef> argument;
 };
+
+inline constexpr std::uint32_t kAggregateOutputBindingId =
+    std::numeric_limits<std::uint32_t>::max();
 
 struct LogicalAggregate {
   std::unique_ptr<LogicalPlanNode> input;
