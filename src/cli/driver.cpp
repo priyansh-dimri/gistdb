@@ -1,7 +1,13 @@
 #include "gistdb/cli/driver.hpp"
 
+#include <unistd.h>
+
+#include <chrono>
+#include <cstdio>
 #include <exception>
+#include <iomanip>
 #include <optional>
+#include <sstream>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -17,6 +23,15 @@
 namespace gistdb::cli {
 
 namespace {
+[[nodiscard]] bool StdoutIsTerminal() {
+  return isatty(fileno(stdout)) != 0;
+}
+
+[[nodiscard]] std::string FormatElapsedSeconds(double seconds) {
+  std::ostringstream oss;
+  oss << std::fixed << std::setprecision(3) << seconds;
+  return oss.str();
+}
 
 void PrintHeader(const std::vector<gistdb::binder::OutputColumn>& schema, std::ostream& out) {
   for (std::size_t i = 0; i < schema.size(); ++i) {
@@ -32,31 +47,62 @@ void RunSelect(std::unique_ptr<gistdb::binder::LogicalPlanNode> plan,
                gistdb::catalog::Catalog& catalog, gistdb::storage::BufferPoolManager& buffer_pool,
                std::ostream& out) {
   std::vector<gistdb::binder::OutputColumn> schema = gistdb::binder::OutputSchema(*plan);
-
+  auto start = std::chrono::steady_clock::now();
   std::unique_ptr<gistdb::execution::Operator> root =
       gistdb::optimizer::Optimizer::Optimize(std::move(plan), catalog, buffer_pool);
 
-  bool header_printed = false;
-  while (std::optional<gistdb::execution::DataChunk> chunk = root->GetNext()) {
-    if (!header_printed) {
-      PrintHeader(schema, out);
-      header_printed = true;
+  std::uint64_t total_rows = 0;
+  if (StdoutIsTerminal()) {
+    std::vector<std::string> headers;
+    headers.reserve(schema.size());
+    for (const auto& col : schema) {
+      headers.push_back(col.display_name);
     }
-    OutputFormatter::WriteChunk(*chunk, out);
-  }
-  if (!header_printed) {
+
+    std::vector<std::vector<std::string>> rows;
+    while (std::optional<gistdb::execution::DataChunk> chunk = root->GetNext()) {
+      for (std::uint32_t r = 0; r < chunk->RowCount(); ++r) {
+        if (!chunk->IsRowSelected(r)) {
+          continue;
+        }
+        std::vector<std::string> cells;
+        cells.reserve(chunk->NumColumns());
+        for (std::size_t c = 0; c < chunk->NumColumns(); ++c) {
+          cells.push_back(OutputFormatter::FormatValue(chunk->Column(c), r));
+        }
+        rows.push_back(std::move(cells));
+        ++total_rows;
+      }
+    }
+
+    if (rows.empty()) {
+      out << "Empty set.\n";
+    } else {
+      OutputFormatter::WriteTable(headers, rows, out);
+    }
+  } else {
     PrintHeader(schema, out);
+    while (std::optional<gistdb::execution::DataChunk> chunk = root->GetNext()) {
+      total_rows += chunk->CountSelectedRows();
+      OutputFormatter::WriteChunk(*chunk, out);
+    }
   }
+
+  double elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+  out << '(' << total_rows << (total_rows == 1 ? " row" : " rows") << " returned in "
+      << FormatElapsedSeconds(elapsed) << "s)\n";
 }
 
 void RunInsert(const gistdb::binder::BoundInsert& insert, gistdb::catalog::Catalog& catalog,
                std::ostream& out) {
+  auto start = std::chrono::steady_clock::now();
   gistdb::execution::InsertExecutor executor(catalog, insert.table_id);
   for (const auto& row : insert.rows) {
     executor.InsertRow(row);
   }
   executor.Finish();
-  out << insert.rows.size() << " row(s) inserted.\n";
+  double elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+  out << insert.rows.size() << " row(s) inserted (" << FormatElapsedSeconds(elapsed) << "s)\n";
 }
 
 void RunCreateTable(const gistdb::binder::TableCreated& created, std::ostream& out) {

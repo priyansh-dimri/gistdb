@@ -1,5 +1,6 @@
 #include "gistdb/cli/output_formatter.hpp"
 
+#include <algorithm>
 #include <iomanip>
 #include <sstream>
 #include <type_traits>
@@ -43,6 +44,41 @@ void OutputFormatter::WriteChunk(const gistdb::execution::DataChunk& chunk, std:
     }
     out << '\n';
   }
+}
+
+void OutputFormatter::WriteTable(const std::vector<std::string>& headers,
+                                 const std::vector<std::vector<std::string>>& rows,
+                                 std::ostream& out) {
+  std::vector<std::size_t> widths(headers.size());
+  for (std::size_t c = 0; c < headers.size(); ++c) {
+    widths[c] = headers[c].size();
+  }
+  for (const auto& row : rows) {
+    for (std::size_t c = 0; c < row.size() && c < widths.size(); ++c) {
+      widths[c] = std::max(widths[c], row[c].size());
+    }
+  }
+
+  auto print_border = [&]() {
+    for (std::size_t width : widths) {
+      out << '+' << std::string(width + 2, '-');
+    }
+    out << "+\n";
+  };
+  auto print_row = [&](const std::vector<std::string>& cells) {
+    for (std::size_t c = 0; c < cells.size(); ++c) {
+      out << "| " << cells[c] << std::string(widths[c] - cells[c].size(), ' ') << ' ';
+    }
+    out << "|\n";
+  };
+
+  print_border();
+  print_row(headers);
+  print_border();
+  for (const auto& row : rows) {
+    print_row(row);
+  }
+  print_border();
 }
 
 }  // namespace gistdb::cli

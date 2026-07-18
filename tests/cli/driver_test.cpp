@@ -89,7 +89,9 @@ TEST(DriverTest, SelectWithNoMatchingRowsStillPrintsHeader) {
   out.str("");
   driver.ExecuteStatement("SELECT id FROM users WHERE id > 100");
 
-  EXPECT_EQ(out.str(), "id\n");
+  EXPECT_EQ(out.str(),
+            "id\n"
+            "(0 rows returned in 0.000s)\n");
 }
 
 TEST(DriverTest, SelectWithWhereClauseFiltersCorrectly) {
