@@ -1,3 +1,4 @@
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -29,6 +30,14 @@ void InstallSigintHandler() {
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
   sigaction(SIGINT, &sa, nullptr);
+}
+
+bool InputAlreadyPending() {
+  int bytes_available = 0;
+  if (ioctl(STDIN_FILENO, FIONREAD, &bytes_available) != 0) {  // NOLINT
+    return false;
+  }
+  return bytes_available > 0;
 }
 
 std::string Trim(const std::string& text) {
@@ -106,14 +115,17 @@ int main(int argc, char** argv) {  // NOLINT
     InstallSigintHandler();
 
     std::string statement_buffer;
-    auto print_prompt = [&] {
+    auto maybe_print_prompt = [&] {
       if (!interactive) {
+        return;
+      }
+      if (InputAlreadyPending()) {
         return;
       }
       std::cout << (statement_buffer.empty() ? kPrompt : kContinuationPrompt) << std::flush;
     };
 
-    print_prompt();
+    maybe_print_prompt();
     while (true) {
       if (g_sigint_received) {
         g_sigint_received = 0;
@@ -121,7 +133,7 @@ int main(int argc, char** argv) {  // NOLINT
         if (interactive) {
           std::cout << '\n';
         }
-        print_prompt();
+        maybe_print_prompt();
         continue;
       }
 
@@ -133,7 +145,7 @@ int main(int argc, char** argv) {  // NOLINT
         if (interactive) {
           std::cout << '\n';
         }
-        print_prompt();
+        maybe_print_prompt();
         continue;
       }
       if (result.status == ReadLineStatus::kEof) {
@@ -150,7 +162,7 @@ int main(int argc, char** argv) {  // NOLINT
           lowered.pop_back();
         }
         lowered = Trim(lowered);
-        std::transform(lowered.begin(), lowered.end(), lowered.begin(),  // NOLINT
+        std::transform(lowered.begin(), lowered.end(), lowered.begin(),
                        [](unsigned char c) { return std::tolower(c); });
 
         if (lowered == "quit" || lowered == "exit") {
@@ -161,11 +173,11 @@ int main(int argc, char** argv) {  // NOLINT
         }
         if (lowered == "help") {
           PrintHelp(std::cout);
-          print_prompt();
+          maybe_print_prompt();
           continue;
         }
         if (trimmed_line.empty()) {
-          print_prompt();
+          maybe_print_prompt();
           continue;
         }
       }
@@ -184,7 +196,7 @@ int main(int argc, char** argv) {  // NOLINT
         }
       }
 
-      print_prompt();
+      maybe_print_prompt();
     }
   } catch (const std::exception& e) {
     std::cerr << "Fatal: " << e.what() << '\n';
