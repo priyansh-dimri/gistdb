@@ -64,7 +64,7 @@ void FlattenAnd(const RawExpression& expr, std::vector<const RawExpression*>& ou
                                                              const ResolutionScope& scope) {
   auto bound = BindScalarExpression(raw, scope);
   if (bound->ResultType() != ExpressionType::kBoolean) {
-    throw BindException("Expected a boolean expression here (Decision B.4)");
+    throw BindException("Expected a boolean expression here");
   }
   return bound;
 }
@@ -241,7 +241,7 @@ struct FromBinding {
                   rhs == nullptr) {
                 throw BindException(
                     "JOIN condition must be an equality (or AND of equalities) between plain "
-                    "column references (Decision B.11 -- GistDB only has a Hash Join operator)");
+                    "column references (GistDB only supports a Hash Join operator)");
               }
               equi_conditions.emplace_back(scope.Resolve(*lhs), scope.Resolve(*rhs));
             }
@@ -330,8 +330,7 @@ struct FromClauseResult {
     }
     if (!connected) {
       throw BindException(
-          "Cartesian product not allowed: FROM items must be connected by a WHERE-clause "
-          "equality (Decision B.12)");
+          "Cartesian product not allowed: FROM items must be connected by a WHERE-clause");
     }
   }
   return FromClauseResult{.plan = std::move(combined), .remaining_where_conjuncts = remaining};
@@ -342,8 +341,7 @@ struct FromClauseResult {
   if (select.has_distinct || select.has_order_by || select.has_limit || select.has_with_clause ||
       select.has_set_operation) {
     throw BindException(
-        "DISTINCT, ORDER BY, LIMIT/OFFSET, WITH, and set operations are not supported "
-        "(Decision B.16)");
+        "DISTINCT, ORDER BY, LIMIT/OFFSET, WITH, and set operations are not supported ");
   }
 
   ResolutionScope scope;
@@ -423,8 +421,7 @@ struct FromClauseResult {
         CollectColumnRefs(*bound, referenced);
         for (const auto& ref : referenced) {
           if (!ContainsColumn(group_by_cols, ref)) {
-            throw BindException(
-                "Non-aggregated SELECT column must appear in GROUP BY (Decision B.14)");
+            throw BindException("Non-aggregated SELECT column must appear in GROUP BY");
           }
         }
       }

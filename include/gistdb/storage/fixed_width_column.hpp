@@ -12,8 +12,7 @@ namespace gistdb::storage {
 template <typename T>
 class FixedWidthColumn {
   static_assert(std::is_same_v<T, std::int32_t> || std::is_same_v<T, float>,
-                "FixedWidthColumn supports only INTEGER (int32) and FLOAT "
-                "(float32), per Storage Checkpoint Decision 3.1");
+                "FixedWidthColumn supports only INTEGER (int32) and FLOAT (float32)");
 
  public:
   FixedWidthColumn() = default;

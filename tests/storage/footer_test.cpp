@@ -106,7 +106,7 @@ TEST(FooterTest, PrefixLongerThanZoneMapPrefixLengthRoundTripsTruncatedExactly) 
 TEST(FooterTest, MultipleRowGroupsPreserveOrderAndIndependentContent) {
   Footer footer;
   footer.AddRowGroup(MakeSampleRowGroup(1, 10240));
-  footer.AddRowGroup(MakeSampleRowGroup(2, 780));  // short final row group, Decision 5.7
+  footer.AddRowGroup(MakeSampleRowGroup(2, 780));
 
   Footer restored = Footer::Deserialize(footer.Serialize());
 

@@ -38,9 +38,8 @@ using gistdb::execution::BoundColumnRef;
       return gistdb::TypeId::kVarchar;
     case gistdb::execution::ExpressionType::kBoolean:
       throw std::runtime_error(
-          "A stored/materialized column resolved to BOOLEAN -- BOOLEAN is an "
-          "internal-only predicate type (Binder Checkpoint, Decision B.4) and should never "
-          "reach physical column translation");
+          "A column resolved to BOOLEAN. BOOLEAN is an internal-only predicate type and should "
+          "never reach physical column translation");
   }
   throw std::runtime_error("Unhandled ExpressionType in ToTypeId");
 }
@@ -64,8 +63,8 @@ using gistdb::execution::BoundColumnRef;
           return types;
         } else {
           throw std::runtime_error(
-              "PhysicalOutputSchema: Aggregate/Projection as a Join operand is unsupported -- "
-              "no subquery-in-FROM support yet (Binder Checkpoint, Decision B.16)");
+              "Aggregate/Projection as a Join operand is unsupported. No subquery-in-FROM "
+              "support.");
         }
       },
       node.node);
@@ -107,8 +106,7 @@ using gistdb::execution::BoundColumnRef;
           return ref.ordinal;
         } else {
           throw std::runtime_error(
-              "FindColumnPosition: Projection as a Join operand is unsupported -- no "
-              "subquery-in-FROM support yet (Binder Checkpoint, Decision B.16)");
+              "FindColumnPosition: Projection as a Join operand is unsupported.");
         }
       },
       node.node);

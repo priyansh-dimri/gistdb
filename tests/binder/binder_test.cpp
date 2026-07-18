@@ -192,7 +192,7 @@ TEST(BinderTest, AggregateFunctionNestedInLargerExpressionThrows) {
   EXPECT_THROW((void)Binder::Bind(stmt, catalog), BindException);
 }
 
-TEST(BinderTest, NonAggregatedColumnNotInGroupByThrowsWithDecisionB14Message) {
+TEST(BinderTest, NonAggregatedColumnNotInGroupByThrows) {
   ScopedTempFile temp_file;
   Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
@@ -222,7 +222,7 @@ TEST(BinderTest, UnknownTableInFromThrows) {
   EXPECT_THROW((void)Binder::Bind(stmt, catalog), BindException);
 }
 
-TEST(BinderTest, LimitClauseIsRejectedPerDecisionB16) {
+TEST(BinderTest, LimitClauseIsRejected) {
   ScopedTempFile temp_file;
   Catalog catalog = MakeTestCatalog(FreshPath(temp_file));
 
