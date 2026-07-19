@@ -109,13 +109,75 @@ void RunCreateTable(const gistdb::binder::TableCreated& created, std::ostream& o
   out << "Table created (id=" << created.table_id << ").\n";
 }
 
+[[nodiscard]] std::string TypeIdName(gistdb::TypeId type) {
+  switch (type) {
+    case gistdb::TypeId::kInteger:
+      return "INTEGER";
+    case gistdb::TypeId::kFloat:
+      return "FLOAT";
+    case gistdb::TypeId::kVarchar:
+      return "VARCHAR";
+  }
+  return "UNKNOWN";
+}
+
+void RunListTables(gistdb::catalog::Catalog& catalog, std::ostream& out) {
+  std::vector<std::string> names = catalog.TableNames();
+  if (names.empty()) {
+    out << "No tables.\n";
+    return;
+  }
+  std::vector<std::vector<std::string>> rows;
+  for (const auto& name : names) {
+    const auto* table = catalog.GetTable(name);
+    rows.push_back(
+        {name, std::to_string(table->NumColumns()), std::to_string(table->TotalRowCount())});
+  }
+  OutputFormatter::WriteTable({"table", "columns", "rows"}, rows, out);
+}
+
+void RunDescribeTable(gistdb::catalog::Catalog& catalog, const std::string& table_name,
+                      std::ostream& out) {
+  const auto* table = catalog.GetTable(table_name);
+  if (table == nullptr) {
+    out << "Error: unknown table '" << table_name << "'\n";
+    return;
+  }
+  std::vector<std::vector<std::string>> rows;
+  for (std::size_t i = 0; i < table->NumColumns(); ++i) {
+    const auto& col = table->Column(i);
+    rows.push_back({col.name, TypeIdName(col.type), std::to_string(col.ordinal)});
+  }
+  OutputFormatter::WriteTable({"column", "type", "ordinal"}, rows, out);
+}
+
 }  // namespace
 
 Driver::Driver(gistdb::catalog::Catalog& catalog, gistdb::storage::BufferPoolManager& buffer_pool,
                std::ostream& out)
     : catalog_(catalog), buffer_pool_(buffer_pool), out_(out) {}
 
+bool Driver::TryHandleMetaCommand(const std::string& input) {
+  if (input == "\\dt" || input == "\\d") {
+    RunListTables(catalog_, out_);
+    return true;
+  }
+  if (input.rfind("\\d ", 0) == 0) {
+    std::string table_name = input.substr(3);
+    std::size_t end = table_name.find_last_not_of(" \t");
+    if (end != std::string::npos) {
+      table_name = table_name.substr(0, end + 1);
+    }
+    RunDescribeTable(catalog_, table_name, out_);
+    return true;
+  }
+  return false;
+}
+
 void Driver::ExecuteStatement(const std::string& sql) {
+  if (TryHandleMetaCommand(sql)) {
+    return;
+  }
   try {
     gistdb::binder::ParsedStatement parsed = gistdb::binder::Parser::ParseSingleStatement(sql);
     gistdb::binder::BindResult bound = gistdb::binder::Binder::Bind(parsed, catalog_);

@@ -24,6 +24,7 @@ class Catalog {
   const TableObject* GetTableById(std::uint32_t table_id) const;
 
   void AddRowGroup(const std::string& table_name, gistdb::storage::RowGroupFooterEntry row_group);
+  [[nodiscard]] std::vector<std::string> TableNames() const;
   gistdb::storage::DiskManager& GetDiskManager() { return disk_manager_; }
 
   void Flush();

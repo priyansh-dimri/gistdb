@@ -1,5 +1,6 @@
 #include "gistdb/catalog/catalog.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
@@ -141,6 +142,16 @@ void Catalog::AddRowGroup(const std::string& table_name,
   }
   it->second.AddRowGroup(std::move(row_group));
   // PersistMetadata();
+}
+
+std::vector<std::string> Catalog::TableNames() const {
+  std::vector<std::string> names;
+  names.reserve(tables_by_name_.size());
+  for (const auto& [name, table] : tables_by_name_) {
+    names.push_back(name);
+  }
+  std::sort(names.begin(), names.end());
+  return names;
 }
 
 }  // namespace gistdb::catalog

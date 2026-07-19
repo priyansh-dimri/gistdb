@@ -18,6 +18,7 @@ class Driver {
   gistdb::catalog::Catalog& catalog_;                // NOLINT
   gistdb::storage::BufferPoolManager& buffer_pool_;  // NOLINT
   std::ostream& out_;                                // NOLINT
+  [[nodiscard]] bool TryHandleMetaCommand(const std::string& input);
 };
 
 }  // namespace gistdb::cli
