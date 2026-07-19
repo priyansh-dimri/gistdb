@@ -48,7 +48,7 @@ The CLI drops you into a fully functional REPL:
 GistDB> CREATE TABLE users (id int4, name varchar);
 Table created (id=0).
 
-GistDB> INSERT INTO users (id, name) 
+GistDB> INSERT INTO users (id, name)
       > VALUES (1, 'alice'), (2, 'bob'), (3, 'carol');
 3 row(s) inserted (0.000s)
 
@@ -75,8 +75,8 @@ SELECT name FROM users WHERE id > 1;
 ```sql
 CREATE TABLE orders (id int4, user_id int4, amount int4);
 INSERT INTO orders (id, user_id, amount) VALUES (100, 1, 50), (101, 2, 30);
-SELECT users.name, orders.amount 
-FROM users JOIN orders 
+SELECT users.name, orders.amount
+FROM users JOIN orders
 ON users.id = orders.user_id;
 ```
 
@@ -116,6 +116,18 @@ docker run -it --rm -v "$(pwd)/data:/data" gistdb /data/mydb.gistdb
 - **No Concurrency:** Single-threaded execution; no ACID transaction overhead.
 - **No Crash Recovery:** No Write-Ahead Logging (WAL).
 - **No Network Stack:** Local CLI execution only; SQL parsing via standard input.
+
+## Performance & Benchmarks
+
+GistDB was benchmarked against SQLite. The goal of this comparison was to empirically validate that the architectural theories of OLAP (Columnar Layouts and Zone-Maps) behave as expected.
+
+The full methodology, charts, and analysis are available in the [Benchmark Report](benchmarks/report.md).
+
+### Key Architectural Takeaways
+
+- **Zone-Map I/O Pruning Works:** On a 1,000,000-row dataset where all rows are filtered out by a simple predicate (`WHERE id > max`), GistDB correctly evaluates the footer metadata and skips touching the disk entirely. GistDB executed this in **0.006s**, while SQLite (which lacks zone-maps) took **0.066s**—an 11x speedup for this workload.
+- **Column Pruning Impact:** The benchmarks demonstrate the performance difference between querying narrow (1 column) and wide (6 columns) data in a columnar format, showing the advantage of avoiding unnecessary column reads.
+- **Aggregation and Join Performance:** GistDB currently trails behind SQLite in aggregation and join benchmarks.
 
 ## Tech Stack
 

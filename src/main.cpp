@@ -198,6 +198,7 @@ int main(int argc, char** argv) {  // NOLINT
 
       maybe_print_prompt();
     }
+    catalog.Flush();
   } catch (const std::exception& e) {
     std::cerr << "Fatal: " << e.what() << '\n';
     return 1;

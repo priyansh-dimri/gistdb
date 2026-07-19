@@ -26,6 +26,14 @@ class Catalog {
   void AddRowGroup(const std::string& table_name, gistdb::storage::RowGroupFooterEntry row_group);
   gistdb::storage::DiskManager& GetDiskManager() { return disk_manager_; }
 
+  void Flush();
+
+  ~Catalog();
+  Catalog(Catalog&&) noexcept = default;
+  Catalog& operator=(Catalog&&) noexcept = default;
+  Catalog(const Catalog&) = delete;
+  Catalog& operator=(const Catalog&) = delete;
+
  private:
   explicit Catalog(gistdb::storage::DiskManager disk_manager);
 

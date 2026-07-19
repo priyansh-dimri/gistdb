@@ -122,6 +122,17 @@ const TableObject* Catalog::GetTableById(std::uint32_t table_id) const {
   return nullptr;
 }
 
+void Catalog::Flush() {
+  PersistMetadata();
+}
+
+Catalog::~Catalog() {
+  try {
+    PersistMetadata();
+  } catch (...) {  // NOLINT
+  }
+}
+
 void Catalog::AddRowGroup(const std::string& table_name,
                           gistdb::storage::RowGroupFooterEntry row_group) {
   auto it = tables_by_name_.find(table_name);
@@ -129,7 +140,7 @@ void Catalog::AddRowGroup(const std::string& table_name,
     throw std::invalid_argument("Catalog::AddRowGroup: unknown table '" + table_name + "'");
   }
   it->second.AddRowGroup(std::move(row_group));
-  PersistMetadata();
+  // PersistMetadata();
 }
 
 }  // namespace gistdb::catalog

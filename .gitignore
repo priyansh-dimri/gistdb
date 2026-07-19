@@ -61,3 +61,11 @@ Thumbs.db
 *.gistdb
 /test_data/
 /scratch/
+
+# ==== Python (benchmarking) ====
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
